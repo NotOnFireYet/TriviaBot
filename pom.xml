@@ -15,11 +15,24 @@
 	<description>Telegram bot for a tech trivia contest.</description>
 	<properties>
 		<java.version>11</java.version>
+		<telegram.version>5.0.1</telegram.version>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
+		</dependency>
+
+		<!-- Telegram API -->
+		<dependency>
+			<groupId>org.telegram</groupId>
+			<artifactId>telegrambots</artifactId>
+			<version>${telegram.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.telegram</groupId>
+			<artifactId>telegrambotsextensions</artifactId>
+			<version>${telegram.version}</version>
 		</dependency>
 
 		<dependency>
