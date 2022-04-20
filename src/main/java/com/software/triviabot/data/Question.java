@@ -1,4 +1,4 @@
-package com.software.triviabot.domain;
+package com.software.triviabot.data;
 
 import lombok.Data;
 
