@@ -15,4 +15,7 @@ public class BotConfig {
 
     @Value("${telegrambot.botToken}")
     private String botToken;
+
+    @Value("${telegrambot.adminId}")
+    private Long adminId;
 }
