@@ -2,25 +2,22 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.BotState;
 import com.software.triviabot.cache.BotStateCache;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class CallbackQueryHandler {
     private final BotStateCache botStateCache;
     private final EventHandler eventHandler;
 
-    @Autowired
-    public CallbackQueryHandler(BotStateCache botStateCache, EventHandler eventHandler) {
-        this.botStateCache = botStateCache;
-        this.eventHandler = eventHandler;
-    }
-
-    public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) {
+    public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) throws TelegramApiException {
         long chatId = buttonQuery.getMessage().getChatId();
         long userId = buttonQuery.getFrom().getId();
 
@@ -31,13 +28,17 @@ public class CallbackQueryHandler {
         log.info("Received callback data: {}", data);
         switch (data) {
             case ("answerCallbackCorrect"):
-                callBackAnswer = eventHandler.processAnswer(chatId, true);
+                callBackAnswer = eventHandler.processAnswer(chatId, userId, true);
                 break;
             case ("answerCallbackWrong"):
-                callBackAnswer = eventHandler.processAnswer(chatId, false);
+                callBackAnswer = eventHandler.processAnswer(chatId, userId, false);
                 break;
             case ("nextQuestionCallback"):
                 botStateCache.saveBotState(userId, BotState.SENDQUESTION);
+                callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
+                break;
+            case ("tryAgainCallback"):
+                botStateCache.saveBotState(userId, BotState.SCORE);
                 callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
                 break;
             default:

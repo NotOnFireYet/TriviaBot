@@ -1,22 +1,30 @@
 package com.software.triviabot.bot.handler;
 
+import com.software.triviabot.bot.ApplicationContextProvider;
+import com.software.triviabot.bot.Bot;
 import com.software.triviabot.bot.BotState;
 import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.cache.QuestionCache;
+import com.software.triviabot.cache.ScoreCache;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.data.User;
 import com.software.triviabot.service.DAO.QuestionDAO;
 import com.software.triviabot.service.DAO.UserDAO;
 import com.software.triviabot.service.MenuService;
 import com.software.triviabot.service.QuestionService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import javax.persistence.EntityNotFoundException;
 
 @Slf4j
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Component
 public class EventHandler {
     private final UserDAO userDAO;
@@ -25,29 +33,27 @@ public class EventHandler {
     private final MenuService menuService;
     private final QuestionService questionService;
     private final QuestionCache questionCache;
+    private final ScoreCache scoreCache;
 
-    @Autowired
-    public EventHandler(UserDAO userDAO, QuestionDAO questionDAO, QuestionCache questionCache,
-        BotStateCache botStateCache, MenuService menuService, QuestionService questionService){
-        this.userDAO = userDAO;
-        this.questionDAO = questionDAO;
-
-        this.questionCache = questionCache;
-        this.botStateCache = botStateCache;
-
-        this.menuService = menuService;
-        this.questionService = questionService;
-    }
-
-    public SendMessage processAnswer(long chatId, boolean isCorrect) {
-        SendMessage sendMessage = new SendMessage();
-        if (isCorrect)
-            sendMessage.setText("Правильно!");
+    public SendMessage processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        if (isCorrect) {
+            message.setText("Правильно!");
+            scoreCache.incrementScore(userId);
+        }
         else
-            sendMessage.setText("Вы пожалеете об этой ошибке.");
-        sendMessage.setReplyMarkup(menuService.getNextQuestionKeyboard());
-        sendMessage.setChatId(String.valueOf(chatId));
-        return sendMessage;
+            message.setText("Вы пожалеете об этой ошибке.");
+
+        // see if this was the last question
+        if (!questionDAO.exists(questionCache.getNextQuestionId(userId))) {
+            log.info("This was the last question");
+            Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
+            telegramBot.execute(message);
+            return sendScoreMessage(chatId, userId);
+        }
+        message.setReplyMarkup(menuService.getNextQuestionKeyboard());
+        return message;
     }
 
     public SendMessage saveNewUser(long chatId, Message message, long userId, SendMessage sendMessage) {
@@ -66,24 +72,43 @@ public class EventHandler {
     public BotApiMethod<?> sendNextQuestion(long chatId, long userId) {
         questionCache.incrementQuestionId(userId);
         int questionId = questionCache.getCurrentQuestionMap().get(userId);
-        Question question = questionDAO.findQuestionById(questionId); // todo: handle when it's a final question
+        Question question = questionDAO.findQuestionById(questionId);
 
-        String messageText = question.getText();
         SendMessage message = new SendMessage();
-        message.setReplyMarkup(menuService.getQuestionKeyboard(question.getAnswers()));
-        message.setText(messageText);
         message.setChatId(String.valueOf(chatId));
+        if (question == null) { // if no more questions left
+            return sendScoreMessage(chatId, userId);
+        } else {
+            message.setReplyMarkup(menuService.getQuestionKeyboard(question.getAnswers()));
+            message.setText(question.getText());
+        }
+        return message;
+    }
+
+    public SendMessage sendScoreMessage(long chatId, long userId){
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Вы ответили на все вопросы! Ваш счет: " + scoreCache.getCurrentScoreMap().get(userId));
+        message.setReplyMarkup(menuService.getTryAgainKeyboard());
         return message;
     }
 
     public BotApiMethod<?> sendStartMessage(long chatId, long userId) {
-        String messageText = "Добрый день, дорогие друзья! \n" +
+        String text = "Добрый день, дорогие друзья! \n" +
             "Сегодня на нашем канале шоу для тех, кто умеет логически мыслить и много знает:" +
             " \"Кто хочет стать миллионером\"! \n" +
-            "Приветствуем наших игроков!";
+            "Приветствуем наших игроков!"; // todo: implement name entering
 
-        return menuService.getStartingMessage(chatId, userId, messageText);
+        return menuService.getStartingMessage(chatId, userId, text);
     }
 
+    public BotApiMethod<?> sendGamestartMessage(long chatId, long userId){
+        SendMessage message = new SendMessage();
+        message.setText("Начнем!");
+        message.setChatId(String.valueOf(chatId));
+        message.setReplyMarkup(menuService.getHintKeyboard());
+        botStateCache.saveBotState(userId, BotState.SENDQUESTION);
+        return message;
+    }
 
 }

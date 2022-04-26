@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @Data
-@Table(name = "questions")
+@Table(name = "question")
 public class Question { // An entity for the game question
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

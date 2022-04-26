@@ -11,9 +11,8 @@ import java.util.Map;
 @Service
 @Getter
 public class QuestionCache {
-    // Keeps current question id for each user id
+    // keeps current question id for each user
     // keeps track of what question to send next
-    // todo: make reset for user after each game
     private final Map<Long, Integer> currentQuestionMap = new HashMap<>();
 
     public void incrementQuestionId(Long userId) {
@@ -24,5 +23,14 @@ public class QuestionCache {
             currentQuestionMap.put(userId, 1);
         }
         log.info("Current question for user {}: {}", userId, currentQuestionMap.get(userId));
+    }
+
+    public int getNextQuestionId(Long userId){
+        return currentQuestionMap.get(userId) + 1;
+    }
+
+    // deletes the record for user after a game is complete
+    public void deleteQuestionCache(Long userId) {
+        currentQuestionMap.remove(userId);
     }
 }

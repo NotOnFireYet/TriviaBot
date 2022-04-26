@@ -3,6 +3,7 @@ package com.software.triviabot.bot;
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
 import com.software.triviabot.bot.handler.MessageHandler;
 import com.software.triviabot.cache.BotStateCache;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -10,23 +11,17 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TelegramFacade {
     private final MessageHandler messageHandler;
     private final CallbackQueryHandler callbackQueryHandler;
     private final BotStateCache botStateCache;
 
-    @Autowired
-    public TelegramFacade(MessageHandler messageHandler, CallbackQueryHandler callbackQueryHandler, BotStateCache botStateCache){
-        this.messageHandler = messageHandler;
-        this.callbackQueryHandler = callbackQueryHandler;
-        this.botStateCache = botStateCache;
-
-    }
-
-    public BotApiMethod<?> handleUpdate(Update update) {
+    public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             return callbackQueryHandler.processCallbackQuery(callbackQuery);
@@ -39,7 +34,7 @@ public class TelegramFacade {
         return null;
     }
 
-    private BotApiMethod<?> handleInputMessage(Message message) {
+    private BotApiMethod<?> handleInputMessage(Message message) throws TelegramApiException {
         BotState botState;
         String inputText = message.getText();
 
@@ -48,7 +43,7 @@ public class TelegramFacade {
                 botState = BotState.START;
                 break;
             case "Начать викторину":
-                botState = BotState.SENDQUESTION;
+                botState = BotState.GAMESTART;
                 break;
             default:
                 botState = botStateCache.getBotStateMap().get(message.getFrom().getId()) == null?

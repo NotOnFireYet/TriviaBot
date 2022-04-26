@@ -1,23 +1,23 @@
 package com.software.triviabot.service.DAO;
 
 import com.software.triviabot.data.Question;
+import com.software.triviabot.data.User;
 import com.software.triviabot.repo.IQuestionRepo;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.persistence.EntityManager;
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
 
 @Slf4j
 @Service
-public class QuestionDAO { // data access object.
-    // idk if i need it for anything other than logging. leave if complex queries needed
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+public class QuestionDAO {
     private final IQuestionRepo questionRepo;
-
-    @Autowired
-    public QuestionDAO(IQuestionRepo questionRepo){
-        this.questionRepo = questionRepo;
-    }
+    private final EntityManager entityManager;
 
     public Question findQuestionById(int id){
         log.info("Fetching question with ID {}", id);
@@ -34,8 +34,18 @@ public class QuestionDAO { // data access object.
         questionRepo.save(question);
     }
 
+    public Boolean exists(int id){
+        log.info("Checking if question {} exists", id);
+        List<?> resultSet = entityManager.createQuery(
+            "SELECT q FROM Question q WHERE question_id=" + id)
+            .getResultList();
+        return resultSet.isEmpty() ? false : true;
+    }
+
     public void deleteQuestion(Question question){
-        log.info("Deleting question");
+        log.info("Deleting question {}", question.getQuestionId());
         questionRepo.delete(question);
     }
+
+    // todo: method for saving score to user
 }
