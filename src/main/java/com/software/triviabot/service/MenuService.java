@@ -1,5 +1,7 @@
 package com.software.triviabot.service;
 
+import com.software.triviabot.data.Answer;
+import com.software.triviabot.service.DAO.UserDAO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +20,11 @@ import java.util.List;
 @Service
 @Getter
 @Setter @Slf4j
-public class MenuService { //todo: this class is a mess. refactor repeating code
+public class MenuService { // Constructs button layouts
     private UserDAO userDAO;
 
     @Value("${telegrambot.adminId}")
-    private int adminId;
+    private long adminId;
 
     public MenuService(UserDAO userDAO) {
         this.userDAO = userDAO;
@@ -67,36 +69,42 @@ public class MenuService { //todo: this class is a mess. refactor repeating code
         return replyKeyboardMarkup;
     }
 
-    public InlineKeyboardMarkup getInlineQuestionKeyboard() {
+    public InlineKeyboardMarkup getQuestionKeyboard(List<Answer> answers) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-
-        InlineKeyboardButton answer1 = new InlineKeyboardButton();
-        answer1.setText("Вариант 1");
-        InlineKeyboardButton answer2 = new InlineKeyboardButton();
-        answer2.setText("Вариант 2");
-        InlineKeyboardButton answer3 = new InlineKeyboardButton();
-        answer3.setText("Вариант 3");
-        InlineKeyboardButton answer4 = new InlineKeyboardButton();
-        answer4.setText("Вариант 4");
-
-        answer1.setCallbackData("answer1");
-        answer2.setCallbackData("answer2");
-        answer3.setCallbackData("answer3");
-        answer4.setCallbackData("answer4");
-
-        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-        List<InlineKeyboardButton> keyboardButtonsRow2 = new ArrayList<>();
-        keyboardButtonsRow1.add(answer1);
-        keyboardButtonsRow1.add(answer2);
-        keyboardButtonsRow2.add(answer3);
-        keyboardButtonsRow2.add(answer4);
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+        List<InlineKeyboardButton> row2 = new ArrayList<>();
+        // Adds buttons to rows
+        for (Answer answer : answers) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(answer.getText());
+            button.setCallbackData("answerCallback");
+            if (answers.indexOf(answer) < 2) // Checks if 1st row is filled
+                row1.add(button);
+            else
+                row2.add(button);
+        }
 
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(keyboardButtonsRow1);
-        rowList.add(keyboardButtonsRow2);
+        rowList.add(row1);
+        rowList.add(row2);
 
         inlineKeyboardMarkup.setKeyboard(rowList);
+        return inlineKeyboardMarkup;
+    }
 
+    public InlineKeyboardMarkup getNextQuestionKeyboard() {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+
+        InlineKeyboardButton button = new InlineKeyboardButton();
+        button.setText("Следующий вопрос");
+        button.setCallbackData("nextQuestionCallback");
+
+        List<InlineKeyboardButton> keyboardButtonsRow = new ArrayList<>();
+        keyboardButtonsRow.add(button);
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow);
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
     }
 

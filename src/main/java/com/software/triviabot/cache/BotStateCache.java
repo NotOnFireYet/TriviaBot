@@ -1,4 +1,4 @@
-package com.software.triviabot.chache;
+package com.software.triviabot.cache;
 
 import com.software.triviabot.bot.BotState;
 import lombok.Getter;
@@ -16,6 +16,6 @@ public class BotStateCache {
 
     public void saveBotState(Long userId, BotState botState) {
         botStateMap.put(userId, botState);
-        log.info("BotStateCache: {}", botStateMap.toString());
+        log.info("BotState: {}", botState);
     }
 }

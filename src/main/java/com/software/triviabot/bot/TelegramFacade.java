@@ -2,7 +2,7 @@ package com.software.triviabot.bot;
 
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
 import com.software.triviabot.bot.handler.MessageHandler;
-import com.software.triviabot.chache.BotStateCache;
+import com.software.triviabot.cache.BotStateCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

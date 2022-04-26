@@ -1,10 +1,10 @@
 package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.BotState;
-import com.software.triviabot.chache.BotStateCache;
+import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.service.MenuService;
-import com.software.triviabot.service.QuestionDAO;
-import com.software.triviabot.service.UserDAO;
+import com.software.triviabot.service.DAO.QuestionDAO;
+import com.software.triviabot.service.DAO.UserDAO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -47,10 +47,11 @@ public class MessageHandler {
             case ("START"):
                 return eventHandler.sendStartMessage(chatId, userId);
             case ("SENDQUESTION"):
-                log.info("Got to sending question");
-                return eventHandler.sendQuestion(chatId);
-            case ("GIVEANSWER"):
-                return eventHandler.processAnswer(chatId);
+                long questionId = 1;
+                return eventHandler.sendQuestion(chatId, questionId);
+            case ("GETANSWER"):
+                sendMessage.setText("no");
+                return sendMessage;
             default:
                 throw new IllegalStateException("Unexpected value: " + botState);
         }

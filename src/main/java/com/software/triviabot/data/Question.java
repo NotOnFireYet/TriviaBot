@@ -1,28 +1,30 @@
 package com.software.triviabot.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
-import java.util.HashMap;
+import java.util.List;
 
-// An entity for the game question
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Data
 @Table(name = "questions")
-public class Question {
+public class Question { // An entity for the game question
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="question_id")
+    private long questionId;
 
     @NotNull
     @Column(unique=true)
     private String text;
 
-    @NotNull
     @Column(unique=true)
-    private HashMap<Integer, String> answers;
-
-    @NotNull
-    private int answerKey; // key of the right answer
+    @OneToMany(mappedBy="question", cascade = CascadeType.ALL,
+        fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<Answer> answers;
 }

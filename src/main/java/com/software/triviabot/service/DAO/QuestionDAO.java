@@ -1,4 +1,4 @@
-package com.software.triviabot.service;
+package com.software.triviabot.service.DAO;
 
 import com.software.triviabot.data.Question;
 import com.software.triviabot.repo.IQuestionRepo;
@@ -10,7 +10,8 @@ import java.util.List;
 
 @Slf4j
 @Service
-public class QuestionDAO {
+public class QuestionDAO { // data access object.
+    // idk if i need it for anything other than logging. leave if complex queries needed
     private final IQuestionRepo questionRepo;
 
     @Autowired
@@ -29,12 +30,12 @@ public class QuestionDAO {
     }
 
     public void saveQuestion(Question question){
-        log.info("Saving question {}", question.getId());
+        log.info("Saving question {}", question.getQuestionId());
         questionRepo.save(question);
     }
 
     public void deleteQuestion(Question question){
-        log.info("Deleting question {}", question.getId());
+        log.info("Deleting question {}", question.getQuestionId());
         questionRepo.delete(question);
     }
 }

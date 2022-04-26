@@ -8,5 +8,4 @@ public class TriviabotApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(TriviabotApplication.class, args);
 	}
-
 }

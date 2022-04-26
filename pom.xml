@@ -15,7 +15,7 @@
 	<description>Telegram bot for a tech trivia contest.</description>
 	<properties>
 		<java.version>11</java.version>
-		<telegram.version>5.0.1</telegram.version>
+		<telegram.version>6.0.1</telegram.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -45,6 +45,8 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Database -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
@@ -54,6 +56,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-rest</artifactId>

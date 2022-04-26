@@ -1,7 +1,7 @@
 package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.BotState;
-import com.software.triviabot.chache.BotStateCache;
+import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.service.MenuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,27 +26,19 @@ public class CallbackQueryHandler {
         long chatId = buttonQuery.getMessage().getChatId();
         long userId = buttonQuery.getFrom().getId();
 
-        BotApiMethod<?> callBackAnswer = null;
+        BotApiMethod<?> callBackAnswer;
 
         String data = buttonQuery.getData();
-
+        botStateCache.saveBotState(userId, BotState.GETANSWER);
         switch (data) {
-            case ("answer1"):
-                callBackAnswer = new SendMessage(String.valueOf(chatId), "Вы тыкнули на 1-й вариант ответа.");
-                botStateCache.saveBotState(userId, BotState.GETANSWER);
+            case ("answerCallback"):
+                callBackAnswer = eventHandler.processAnswer(chatId, buttonQuery.getMessage());
                 break;
-            case ("answer2"):
-                callBackAnswer = new SendMessage(String.valueOf(chatId), "Вы тыкнули на 2-й вариант ответа.");
-                botStateCache.saveBotState(userId, BotState.GETANSWER);
+            case ("nextQuestionCallback"):
+                callBackAnswer = new SendMessage(String.valueOf(chatId), "Следующий вопрос я не дам.");
                 break;
-            case ("answer3"):
-                callBackAnswer = new SendMessage(String.valueOf(chatId), "Вы тыкнули на 3-й вариант ответа.");
-                botStateCache.saveBotState(userId, BotState.GETANSWER);
-                break;
-            case ("answer4"):
-                callBackAnswer = new SendMessage(String.valueOf(chatId), "Вы тыкнули на 4-й вариант ответа.");
-                botStateCache.saveBotState(userId, BotState.GETANSWER);
-                break;
+            default:
+                throw new IllegalArgumentException("Unknown callback");
         }
         return callBackAnswer;
     }

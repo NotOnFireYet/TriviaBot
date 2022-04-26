@@ -1,4 +1,4 @@
-package com.software.triviabot.service;
+package com.software.triviabot.service.DAO;
 
 import com.software.triviabot.data.User;
 import com.software.triviabot.repo.IUserRepo;
