@@ -17,7 +17,7 @@ public class Question { // An entity for the game question
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="question_id")
-    private long questionId;
+    private int questionId;
 
     @NotNull
     @Column(unique=true)

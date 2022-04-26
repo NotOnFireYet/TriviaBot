@@ -19,7 +19,7 @@ public class QuestionDAO { // data access object.
         this.questionRepo = questionRepo;
     }
 
-    public Question findQuestionById(Long id){
+    public Question findQuestionById(int id){
         log.info("Fetching question with ID {}", id);
         return questionRepo.getById(id);
     }
@@ -30,12 +30,12 @@ public class QuestionDAO { // data access object.
     }
 
     public void saveQuestion(Question question){
-        log.info("Saving question {}", question.getQuestionId());
+        log.info("Saving question");
         questionRepo.save(question);
     }
 
     public void deleteQuestion(Question question){
-        log.info("Deleting question {}", question.getQuestionId());
+        log.info("Deleting question");
         questionRepo.delete(question);
     }
 }

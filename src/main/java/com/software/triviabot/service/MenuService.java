@@ -71,22 +71,20 @@ public class MenuService { // Constructs button layouts
 
     public InlineKeyboardMarkup getQuestionKeyboard(List<Answer> answers) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        List<InlineKeyboardButton> row1 = new ArrayList<>();
-        List<InlineKeyboardButton> row2 = new ArrayList<>();
-        // Adds buttons to rows
-        for (Answer answer : answers) {
-            InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText(answer.getText());
-            button.setCallbackData("answerCallback");
-            if (answers.indexOf(answer) < 2) // Checks if 1st row is filled
-                row1.add(button);
-            else
-                row2.add(button);
-        }
 
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(row1);
-        rowList.add(row2);
+        String isCorrect;
+
+        // Compiles list of rows with buttons
+        for (Answer answer : answers) {
+            isCorrect = answer.getIsCorrect() ? "Correct" : "Wrong";
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(answer.getText());
+            button.setCallbackData("answerCallback" + isCorrect);
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            rowList.add(row);
+        }
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;

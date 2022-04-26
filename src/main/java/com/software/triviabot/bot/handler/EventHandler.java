@@ -2,6 +2,7 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.BotState;
 import com.software.triviabot.cache.BotStateCache;
+import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.data.User;
 import com.software.triviabot.service.DAO.QuestionDAO;
@@ -15,8 +16,6 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-import java.util.Arrays;
-
 @Slf4j
 @Component
 public class EventHandler {
@@ -25,20 +24,27 @@ public class EventHandler {
     private final BotStateCache botStateCache;
     private final MenuService menuService;
     private final QuestionService questionService;
+    private final QuestionCache questionCache;
 
     @Autowired
-    public EventHandler(UserDAO userDAO, QuestionDAO questionDAO,
+    public EventHandler(UserDAO userDAO, QuestionDAO questionDAO, QuestionCache questionCache,
         BotStateCache botStateCache, MenuService menuService, QuestionService questionService){
         this.userDAO = userDAO;
         this.questionDAO = questionDAO;
+
+        this.questionCache = questionCache;
         this.botStateCache = botStateCache;
+
         this.menuService = menuService;
         this.questionService = questionService;
     }
 
-    public SendMessage processAnswer(long chatId, Message answer) {
+    public SendMessage processAnswer(long chatId, boolean isCorrect) {
         SendMessage sendMessage = new SendMessage();
-        sendMessage.setText("Вы дали ответ: " + answer.getText());
+        if (isCorrect)
+            sendMessage.setText("Правильно!");
+        else
+            sendMessage.setText("Вы пожалеете об этой ошибке.");
         sendMessage.setReplyMarkup(menuService.getNextQuestionKeyboard());
         sendMessage.setChatId(String.valueOf(chatId));
         return sendMessage;
@@ -56,9 +62,12 @@ public class EventHandler {
         return sendMessage;
     }
 
-    public BotApiMethod<?> sendQuestion(long chatId, long questionId) {
-        questionService.createQuestion("2+2=?", Arrays.asList("1", "2", "3", "4"), "4");
-        Question question = questionDAO.findQuestionById(questionId);
+    // returns the next question according to QuestionCache
+    public BotApiMethod<?> sendNextQuestion(long chatId, long userId) {
+        questionCache.incrementQuestionId(userId);
+        int questionId = questionCache.getCurrentQuestionMap().get(userId);
+        Question question = questionDAO.findQuestionById(questionId); // todo: handle when it's a final question
+
         String messageText = question.getText();
         SendMessage message = new SendMessage();
         message.setReplyMarkup(menuService.getQuestionKeyboard(question.getAnswers()));

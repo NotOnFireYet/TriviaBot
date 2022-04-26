@@ -12,10 +12,11 @@ import java.util.Map;
 @Service
 @Getter
 public class BotStateCache {
+    // Keeps current bot state for each user id
     private final Map<Long, BotState> botStateMap = new HashMap<>();
 
     public void saveBotState(Long userId, BotState botState) {
         botStateMap.put(userId, botState);
-        log.info("BotState: {}", botState);
+        log.info("BotState for user {}: {}", userId, botState);
     }
 }

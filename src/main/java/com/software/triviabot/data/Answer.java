@@ -23,6 +23,6 @@ public class Answer { // An entity for the answer, one-to-many with answers
 
     private String text;
 
-    @Column(name="is_correct")
+    @Column(name="is_correct", nullable=false)
     private Boolean isCorrect; // marks the correct answer
 }

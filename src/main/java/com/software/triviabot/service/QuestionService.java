@@ -22,7 +22,6 @@ public class QuestionService { // Class for editing the question data in the dat
 
     public Question createQuestion(String text, List<String> answerTexts, String rightAnswerText){
         Question question = new Question();
-        //question.setQuestionId(1);
         question.setText(text);
         ArrayList<Answer> answerList = new ArrayList<>();
 
@@ -30,9 +29,7 @@ public class QuestionService { // Class for editing the question data in the dat
             Answer answer = new Answer();
             answer.setText(answerText);
             answer.setQuestion(question);
-            if (answerText.equals(rightAnswerText))
-                answer.setIsCorrect(true);
-
+            answer.setIsCorrect(answerText.equals(rightAnswerText));
             answerList.add(answer);
         }
         question.setAnswers(answerList);

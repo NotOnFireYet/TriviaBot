@@ -2,8 +2,7 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.BotState;
 import com.software.triviabot.cache.BotStateCache;
-import com.software.triviabot.service.MenuService;
-import com.software.triviabot.service.DAO.QuestionDAO;
+import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.service.DAO.UserDAO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +14,15 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 @Slf4j
 @Component
 public class MessageHandler {
-    private final QuestionDAO questionDAO;
-    private final MenuService menuService;
     private final UserDAO userDAO;
     private final BotStateCache botStateCache;
     private final EventHandler eventHandler;
+    private final QuestionCache questionCache;
 
     @Autowired
-    public MessageHandler(QuestionDAO questionDAO, UserDAO userDAO, MenuService menuService,
+    public MessageHandler(UserDAO userDAO, QuestionCache questionCache,
         EventHandler eventHandler, BotStateCache botStateCache) {
-        this.questionDAO = questionDAO;
-        this.menuService = menuService;
+        this.questionCache = questionCache;
         this.userDAO = userDAO;
         this.botStateCache = botStateCache;
         this.eventHandler = eventHandler;
@@ -47,11 +44,7 @@ public class MessageHandler {
             case ("START"):
                 return eventHandler.sendStartMessage(chatId, userId);
             case ("SENDQUESTION"):
-                long questionId = 1;
-                return eventHandler.sendQuestion(chatId, questionId);
-            case ("GETANSWER"):
-                sendMessage.setText("no");
-                return sendMessage;
+                return eventHandler.sendNextQuestion(chatId, userId);
             default:
                 throw new IllegalStateException("Unexpected value: " + botState);
         }

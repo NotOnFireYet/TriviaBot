@@ -2,23 +2,21 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.BotState;
 import com.software.triviabot.cache.BotStateCache;
-import com.software.triviabot.service.MenuService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 
+@Slf4j
 @Component
 public class CallbackQueryHandler {
     private final BotStateCache botStateCache;
-    private final MenuService menuService;
     private final EventHandler eventHandler;
 
     @Autowired
-    public CallbackQueryHandler(BotStateCache botStateCache, MenuService menuService, EventHandler eventHandler) {
+    public CallbackQueryHandler(BotStateCache botStateCache, EventHandler eventHandler) {
         this.botStateCache = botStateCache;
-        this.menuService = menuService;
         this.eventHandler = eventHandler;
     }
 
@@ -30,12 +28,17 @@ public class CallbackQueryHandler {
 
         String data = buttonQuery.getData();
         botStateCache.saveBotState(userId, BotState.GETANSWER);
+        log.info("Received callback data: {}", data);
         switch (data) {
-            case ("answerCallback"):
-                callBackAnswer = eventHandler.processAnswer(chatId, buttonQuery.getMessage());
+            case ("answerCallbackCorrect"):
+                callBackAnswer = eventHandler.processAnswer(chatId, true);
+                break;
+            case ("answerCallbackWrong"):
+                callBackAnswer = eventHandler.processAnswer(chatId, false);
                 break;
             case ("nextQuestionCallback"):
-                callBackAnswer = new SendMessage(String.valueOf(chatId), "Следующий вопрос я не дам.");
+                botStateCache.saveBotState(userId, BotState.SENDQUESTION);
+                callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown callback");
