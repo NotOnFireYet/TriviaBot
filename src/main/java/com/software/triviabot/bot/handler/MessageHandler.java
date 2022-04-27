@@ -2,9 +2,11 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ApplicationContextProvider;
 import com.software.triviabot.bot.Bot;
-import com.software.triviabot.bot.BotState;
+import com.software.triviabot.bot.enums.BotState;
 import com.software.triviabot.cache.BotStateCache;
+import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
+import com.software.triviabot.config.HintConfig;
 import com.software.triviabot.service.DAO.UserDAO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,22 +35,27 @@ public class MessageHandler {
 
         // if new user
         if (!userDAO.exists(userId)) {
-            return eventHandler.saveNewUser(chatId, message, userId, sendMessage);
+            eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
+            botStateCache.saveBotState(userId, BotState.ENTERNAME);
+            return eventHandler.getStartMessage(chatId);
         }
         botStateCache.saveBotState(userId, botState); //save state to cache
 
-        switch (botState.name()) {
-            case ("START"):
-                return eventHandler.sendStartMessage(chatId, userId);
-            case ("GAMESTART"):
-                telegramBot.execute(eventHandler.sendGamestartMessage(userId, chatId));
+        switch (botState) {
+            case ENTERNAME:
+                return eventHandler.processEnteredName(userId, chatId, message.getText());
+            case GAMESTART:
+                HintCache.setUpHints(userId);
+                telegramBot.execute(eventHandler.getGamestartMessage(userId, chatId));
                 return eventHandler.sendNextQuestion(chatId, userId);
-            case ("SENDQUESTION"):
-                telegramBot.execute(eventHandler.sendDontGetDistracted(chatId, userId));
+            case SENDQUESTION:
+                telegramBot.execute(eventHandler.getDontGetDistracted(chatId, userId));
+                questionCache.decreaseQuestionId(userId);
                 return eventHandler.sendNextQuestion(chatId, userId);
+            case GIVEHINT:
+                return eventHandler.processHintRequest(chatId, userId, HintConfig.getHintByText(message.getText()));
             default:
                 throw new IllegalStateException("Unexpected value: " + botState);
         }
     }
-
 }

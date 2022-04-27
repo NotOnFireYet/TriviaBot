@@ -1,8 +1,11 @@
 package com.software.triviabot.bot;
 
+import com.software.triviabot.bot.enums.BotState;
+import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
 import com.software.triviabot.bot.handler.MessageHandler;
 import com.software.triviabot.cache.BotStateCache;
+import com.software.triviabot.config.HintConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +39,7 @@ public class TelegramFacade {
 
     private BotApiMethod<?> handleInputMessage(Message message) throws TelegramApiException {
         BotState botState;
+        long userId = message.getFrom().getId();
         String inputText = message.getText();
 
         switch (inputText) {
@@ -45,9 +49,16 @@ public class TelegramFacade {
             case "Начать викторину":
                 botState = BotState.GAMESTART;
                 break;
-            default:
-                botState = botStateCache.getBotStateMap().get(message.getFrom().getId()) == null?
-                    BotState.START: botStateCache.getBotStateMap().get(message.getFrom().getId());
+            default: // if first ever command, set to START, if not, leave botstate the same
+                botState = botStateCache.getBotStateMap().get(userId) == null ?
+                    BotState.START : botStateCache.getBotStateMap().get(userId);
+        }
+
+        // reaction to hint buttons
+        if (inputText.equals(HintConfig.getHintText(Hint.AUDIENCE_HELP)) ||
+            inputText.equals(HintConfig.getHintText(Hint.CALL_FRIEND)) ||
+            inputText.equals(HintConfig.getHintText(Hint.FIFTY_FIFTY))) {
+            botState = BotState.GIVEHINT;
         }
 
         return messageHandler.handle(message, botState);

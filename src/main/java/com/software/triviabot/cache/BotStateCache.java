@@ -1,6 +1,6 @@
 package com.software.triviabot.cache;
 
-import com.software.triviabot.bot.BotState;
+import com.software.triviabot.bot.enums.BotState;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

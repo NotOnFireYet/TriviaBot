@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import java.util.List;
@@ -43,6 +42,13 @@ public class UserDAO {
         List<Score> newScores = user.getScores();
         newScores.add(score);
         user.setScores(newScores);
+        userRepo.save(user);
+    }
+
+    public void saveNameToUser(long userId, String name){
+        log.info("Saving name {} to user {}", name, userId);
+        User user = userRepo.getById(userId);
+        user.setName(name);
         userRepo.save(user);
     }
 

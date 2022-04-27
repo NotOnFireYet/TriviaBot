@@ -2,10 +2,13 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ApplicationContextProvider;
 import com.software.triviabot.bot.Bot;
-import com.software.triviabot.bot.BotState;
+import com.software.triviabot.bot.enums.BotState;
+import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.cache.BotStateCache;
+import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.ScoreCache;
+import com.software.triviabot.config.HintConfig;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.data.Score;
 import com.software.triviabot.data.User;
@@ -17,8 +20,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
@@ -34,75 +37,39 @@ public class EventHandler {
     private final ScoreCache scoreCache;
     private final BotStateCache botStateCache;
 
-    public SendMessage processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
+    ////////////* NEW USER START EVENTS */////////////
+    public SendMessage processEnteredName(long userId, long chatId, String name) {
+        userDAO.saveNameToUser(userId, name);
+        return getGreetingWithName(chatId, name);
+    }
+
+    private SendMessage getGreetingWithName(long chatId, String name){
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        if (isCorrect) {
-            message.setText("Правильно!");
-            scoreCache.incrementScore(userId);
-        }
-        else
-            message.setText("Вы пожалеете об этой ошибке.");
-
-        // see if this was the last question
-        if (!questionDAO.exists(questionCache.getNextQuestionId(userId))) {
-            Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
-            telegramBot.execute(message);
-            return processScoreEvent(chatId, userId);
-        }
-        message.setReplyMarkup(menuService.getNextQuestionKeyboard());
+        message.setText("Здравствуй, " + name + "!");
+        message.setReplyMarkup(menuService.getStartQuizKeyboard());
         return message;
     }
 
-    public SendMessage processScoreEvent(long chatId, long userId){
-        Score score = scoreCache.getCurrentScoreMap().get(userId);
-        scoreCache.deleteScoreCache(userId);
-        questionCache.deleteQuestionCache(userId);
-        scoreDAO.saveScore(score);
-        userDAO.saveScoreToUser(userId, score);
-        return getScoreMessage(chatId, score.getPoints());
-    }
-
-    public SendMessage saveNewUser(long chatId, Message message, long userId, SendMessage sendMessage) {
-        String userName = message.getFrom().getUserName();
+    public void saveNewUser(String username, long userId) {
         User user = new User();
         user.setUserId(userId);
-        user.setUsername(userName);
+        user.setUsername(username);
         userDAO.saveUser(user);
-        sendMessage.setText("Пользователь сохранен");
-        sendMessage.setChatId(String.valueOf(chatId));
-        botStateCache.saveBotState(userId, BotState.START);
-        return sendMessage;
     }
 
-    // returns the next question according to QuestionCache
-    public SendMessage sendNextQuestion(long chatId, long userId) {
-        questionCache.incrementQuestionId(userId);
-        int questionId = questionCache.getCurrentQuestionMap().get(userId);
-        Question question = questionDAO.findQuestionById(questionId);
-
+    public SendMessage getStartMessage(long chatId) {
+        String text = "Добрый день, дорогой друг! \n" +
+            "Здесь тебе предстоит попробовать свои силы в игре:" +
+            " \"Кто хочет стать миллионером\"! \n" +
+            "Пожалуйста, введи свое имя:"; // todo: acceptable input is text
         SendMessage message = new SendMessage();
+        message.setText(text);
         message.setChatId(String.valueOf(chatId));
-        if (question == null) { // if no more questions left
-            return processScoreEvent(chatId, userId);
-        } else {
-            message.setReplyMarkup(menuService.getQuestionKeyboard(question.getAnswers()));
-            message.setText(question.getText());
-        }
         return message;
     }
 
-
-    public SendMessage sendStartMessage(long chatId, long userId) {
-        String text = "Добрый день, дорогие друзья! \n" +
-            "Сегодня на нашем канале шоу для тех, кто умеет логически мыслить и много знает:" +
-            " \"Кто хочет стать миллионером\"! \n" +
-            "Приветствуем наших игроков!"; // todo: implement name entering
-
-        return menuService.getStartingMessage(chatId, userId, text);
-    }
-
-    public SendMessage sendGamestartMessage(long chatId, long userId){
+    public SendMessage getGamestartMessage(long chatId, long userId){
         SendMessage message = new SendMessage();
         message.setText("Начнем!");
         message.setChatId(String.valueOf(chatId));
@@ -111,17 +78,100 @@ public class EventHandler {
         return message;
     }
 
-    public SendMessage sendDontGetDistracted(long chatId, long userId) {
+
+    ////////////* QUIZ GAME EVENTS *////////////
+    public SendMessage processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
         SendMessage message = new SendMessage();
-        message.setText("Давайте не будем отвлекаться.");
+        message.setChatId(String.valueOf(chatId));
+        if (isCorrect) {
+            message.setText("Правильно!");
+            scoreCache.incrementScore(userId);
+        }
+        else
+            message.setText("Ты пожалеешь об этой ошибке.");
+
+        // see if this was the last question
+        if (!questionDAO.exists(QuestionCache.getNextQuestionId(userId))) {
+            Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
+            telegramBot.execute(message);
+            return processScoreEvent(chatId, userId);
+        }
+        message.setReplyMarkup(menuService.getNextQuestionKeyboard());
+        return message;
+    }
+
+    ////////////* HINTS *////////////
+    public BotApiMethod<?> processHintRequest(long chatId, long userId, Hint hint) throws TelegramApiException {
+        HintCache.decreaseHint(userId, hint);
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Вы выбрали подсказку \"" + HintConfig.getHintText(hint) + "\"." +
+            "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint));
+
+        Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
+        telegramBot.execute(message);
+
+        switch (hint) {
+            case AUDIENCE_HELP:
+                log.info("Audience help request received");
+                break;
+            case FIFTY_FIFTY:
+                log.info("50/50 request received");
+                return processFiftyFiftyRequest(chatId, userId, hint);
+            case CALL_FRIEND:
+                log.info("Call friend request received");
+                break;
+            default:
+                log.info("Unknown hint request");
+        }
+        return null;
+    }
+
+    public SendMessage processFiftyFiftyRequest(long chatId, long userId, Hint hint) throws TelegramApiException {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+
+        int questionId = QuestionCache.getCurrentQuestionId(userId);
+        message.setReplyMarkup(menuService.getFiftyFiftyKeyboard(userId));
+        message.setText("\uD83D\uDD39 " + questionDAO.findQuestionById(questionId).getText());
+
+        return message;
+    }
+
+    // returns the next question message according to QuestionCache
+    public SendMessage sendNextQuestion(long chatId, long userId) {
+        QuestionCache.incrementQuestionId(userId);
+        int questionId = QuestionCache.getCurrentQuestionId(userId);
+        Question question = questionDAO.findQuestionById(questionId);
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setReplyMarkup(menuService.getQuestionKeyboard(question.getAnswers()));
+        message.setText("\uD83D\uDD39 " + question.getText());
+        return message;
+    }
+
+    public SendMessage getDontGetDistracted(long chatId, long userId) {
+        SendMessage message = new SendMessage();
+        message.setText("Не будем отвлекаться.");
         message.setChatId(String.valueOf(chatId));
         return message;
+    }
+
+    ////////////* GAME END EVENTS *////////////
+    public SendMessage processScoreEvent(long chatId, long userId){
+        Score score = scoreCache.getCurrentScoreMap().get(userId);
+        scoreCache.deleteScoreCache(userId);
+        QuestionCache.deleteQuestionCache(userId);
+        scoreDAO.saveScore(score);
+        userDAO.saveScoreToUser(userId, score);
+        return getScoreMessage(chatId, score.getPoints());
     }
 
     private SendMessage getScoreMessage(long chatId, int points){
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText("Вы ответили на все вопросы! Ваш счет: " + points);
+        message.setText("Вопросы закончены! Твой счет: " + points);
         message.setReplyMarkup(menuService.getTryAgainKeyboard());
         return message;
     }

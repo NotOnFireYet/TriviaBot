@@ -1,6 +1,6 @@
 package com.software.triviabot.bot.handler;
 
-import com.software.triviabot.bot.BotState;
+import com.software.triviabot.bot.enums.BotState;
 import com.software.triviabot.cache.BotStateCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
