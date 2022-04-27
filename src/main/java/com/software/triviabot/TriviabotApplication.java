@@ -1,6 +1,6 @@
 package com.software.triviabot;
 
-import com.software.triviabot.service.QuestionService;
+import com.software.triviabot.service.DAO.QuestionDAO;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,15 +15,15 @@ public class TriviabotApplication {
 	}
 
     @Bean
-    CommandLineRunner run(QuestionService questionService){
+    CommandLineRunner run(QuestionDAO questionDAO){
         return args -> {
-            questionService.createQuestion("На каком языке написан этот бот?",
+            questionDAO.buildAndSaveQuestion("На каком языке написан этот бот?",
                 Arrays.asList("Python", "Java", "C#", "русский язык жестов"),
                 "Java");
-            questionService.createQuestion("Сколько различают главных семейств динозавров?",
+            questionDAO.buildAndSaveQuestion("Сколько различают главных семейств динозавров?",
                 Arrays.asList("1", "2", "3", "4"),
                 "2");
-            questionService.createQuestion("Понравилась ли вам эта викторина?",
+            questionDAO.buildAndSaveQuestion("Понравилась ли вам эта викторина?",
                 Arrays.asList("Очень", "В целом норм", "Не особо", "Худший опыт моей жизни"),
                 "Очень");
         };

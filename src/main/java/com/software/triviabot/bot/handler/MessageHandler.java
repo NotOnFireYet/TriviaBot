@@ -43,6 +43,9 @@ public class MessageHandler {
             case ("GAMESTART"):
                 telegramBot.execute(eventHandler.sendGamestartMessage(userId, chatId));
                 return eventHandler.sendNextQuestion(chatId, userId);
+            case ("SENDQUESTION"):
+                telegramBot.execute(eventHandler.sendDontGetDistracted(chatId, userId));
+                return eventHandler.sendNextQuestion(chatId, userId);
             default:
                 throw new IllegalStateException("Unexpected value: " + botState);
         }

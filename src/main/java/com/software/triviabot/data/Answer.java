@@ -10,8 +10,9 @@ import javax.persistence.*;
 @NoArgsConstructor
 @Entity
 @Data
-@Table(name = "answer")
-public class Answer { // An entity for the answer, one-to-many with answers
+@Table(name = "answers")
+// An entity for the answer, many-to-one with questions
+public class Answer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="answer_id")

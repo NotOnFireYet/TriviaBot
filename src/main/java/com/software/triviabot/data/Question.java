@@ -12,8 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @Data
-@Table(name = "question")
-public class Question { // An entity for the game question
+@Table(name = "questions")
+// Question entity, one-to-many with answers
+public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="question_id")
@@ -22,6 +23,10 @@ public class Question { // An entity for the game question
     @NotNull
     @Column(unique=true)
     private String text;
+
+    private String correctAnswerReaction; // todo: implement reactions
+
+    private String wrongAnswerReaction;
 
     @Column(unique=true)
     @OneToMany(mappedBy="question", cascade = CascadeType.ALL,
