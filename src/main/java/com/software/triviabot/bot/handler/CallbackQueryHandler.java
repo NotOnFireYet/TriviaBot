@@ -38,12 +38,6 @@ public class CallbackQueryHandler {
                 BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
                 break;
-            case ("tryAgainCallback"):
-                QuestionCache.deleteQuestionCache(userId);
-                HintCache.setUpHints(userId);
-                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
-                callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
-                break;
             default:
                 throw new IllegalArgumentException("Unknown callback");
         }

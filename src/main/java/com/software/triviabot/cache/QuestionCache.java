@@ -42,6 +42,7 @@ public class QuestionCache {
 
     // deletes the record for user after a game is complete
     public static void deleteQuestionCache(Long userId) {
-        currentQuestionMap.remove(userId);
+        if (currentQuestionMap.containsKey(userId))
+            currentQuestionMap.remove(userId);
     }
 }

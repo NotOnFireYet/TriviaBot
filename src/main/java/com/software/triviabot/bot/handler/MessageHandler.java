@@ -22,9 +22,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class MessageHandler {
     private final UserDAO userDAO;
-    private final BotStateCache botStateCache;
     private final EventHandler eventHandler;
-    private final QuestionCache questionCache;
 
     public BotApiMethod<?> handle(Message message, BotState botState) throws TelegramApiException {
         Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
@@ -36,21 +34,21 @@ public class MessageHandler {
         // if new user
         if (!userDAO.exists(userId)) {
             eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
-            botStateCache.saveBotState(userId, BotState.ENTERNAME);
+            BotStateCache.saveBotState(userId, BotState.ENTERNAME);
             return eventHandler.getStartMessage(chatId);
         }
-        botStateCache.saveBotState(userId, botState);
+        BotStateCache.saveBotState(userId, botState);
 
         switch (botState) {
             case ENTERNAME:
-                eventHandler.processEnteredName(userId, chatId, message.getText());
+                return eventHandler.processEnteredName(userId, chatId, message.getText());
             case GAMESTART:
                 HintCache.setUpHints(userId);
                 telegramBot.execute(eventHandler.getGamestartMessage(userId, chatId));
                 return eventHandler.sendNextQuestion(chatId, userId);
             case SENDQUESTION:
                 telegramBot.execute(eventHandler.getDontGetDistracted(chatId, userId));
-                questionCache.decreaseQuestionId(userId);
+                QuestionCache.decreaseQuestionId(userId);
                 return eventHandler.sendNextQuestion(chatId, userId);
             case GIVEHINT:
                 return eventHandler.processHintRequest(chatId, userId, HintContainer.getHintByText(message.getText()));

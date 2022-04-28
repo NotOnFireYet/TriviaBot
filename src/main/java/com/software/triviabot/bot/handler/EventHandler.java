@@ -37,16 +37,38 @@ public class EventHandler {
     private final BotStateCache botStateCache;
 
     ////////////* NEW USER START EVENTS */////////////
-    public SendMessage processEnteredName(long userId, long chatId, String name) {
+    public SendMessage processEnteredName(long userId, long chatId, String name) throws TelegramApiException {
         userDAO.saveNameToUser(userId, name);
-        return getGreetingWithName(chatId, name);
+        return getGreetingWithRules(chatId, name);
     }
 
-    private SendMessage getGreetingWithName(long chatId, String name){
+    private SendMessage getGreetingWithRules(long chatId, String name) throws TelegramApiException {
+        Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
+        telegramBot.execute(getSimpleMessage(chatId, "Здравствуй, " + name + "!"));;
+        return getRulesMessage(chatId);
+    }
+
+    public SendMessage getRulesMessage(long chatId){
+        String rules = "Тебе предстоит 15 вопросов. " +
+            "\nКаждый верный ответ увеличивает твой выигрыш, каждый неверный - " +
+            "полностью его обнуляет.\nНо не все так просто!" +
+            "\nТебе доступны подсказки:\n\n" +
+            "<b>" + HintContainer.getHintText(Hint.FIFTY_FIFTY) + "</b>\n бот оставит 1 верный и 1 неверный ответ\n\n"+
+            "<b>" + HintContainer.getHintText(Hint.CALL_FRIEND) + "</b>\n бот покажет, как на этот вопрос ответил другой рандомный пользователь " +
+            "при первом прохождении\n\n" +
+            "<b>" + HintContainer.getHintText(Hint.AUDIENCE_HELP) + "</b>\n бот покажет статистику ответов заранее опрошенной аудитории\n\n"+
+            "Каждую подсказку можно использовать 2 раза за игру.\n" +
+            "Желаем удачи!";
+        SendMessage message = getSimpleMessage(chatId, rules);
+        message.enableHtml(true);
+        message.setReplyMarkup(menuService.getStartKeyboard());
+        return message;
+    }
+
+    private SendMessage getSimpleMessage(long chatId, String text){
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText("Здравствуй, " + name + "!");
-        message.setReplyMarkup(menuService.getStartQuizKeyboard());
+        message.setText(text);
         return message;
     }
 
@@ -87,7 +109,7 @@ public class EventHandler {
         if (isCorrect) {
             String text = correctMessage;
             if (questionId != questionDAO.getNumberOfQuestions())
-                text += "\n" + QuestionPriceContainer.getPriceByQuestionId(questionId) + " рублей твои.";
+                text += "\n" + QuestionPriceContainer.getPriceByQuestionId(questionId) + " рублей твои!";
             message.setText(text);
 
             // see if this was the last question
@@ -178,11 +200,12 @@ public class EventHandler {
         Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
         telegramBot.execute(getScoreMessage(chatId, userId, isSuccessful));
 
-        return getTryAgainMessage(chatId);
+        return getSimpleMessage(chatId, "Ты можешь посмотреть свою статистику или попробовать еще раз.");
     }
 
-    private SendMessage getScoreMessage(long chatId, long userId, boolean isSuccessful) throws TelegramApiException {
+    private SendMessage getScoreMessage(long chatId, long userId, boolean isSuccessful) {
         SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
         if (isSuccessful){
             message.setText("Вопросы закончены! Миллион рублей твои!");
         } else {
@@ -191,15 +214,7 @@ public class EventHandler {
                     FailMessageContainer.getRandomFailMessage());
             message.setChatId(String.valueOf(chatId));
         }
-        message.setReplyMarkup(menuService.getStatisticsKeyboard());
-        return message;
-    }
-
-    private SendMessage getTryAgainMessage(long chatId){
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("Ты можешь посмотреть свою статистику или попробовать еще раз.");
-        message.setReplyMarkup(menuService.getTryAgainKeyboard());
+        message.setReplyMarkup(menuService.getMainKeyboard());
         return message;
     }
 }

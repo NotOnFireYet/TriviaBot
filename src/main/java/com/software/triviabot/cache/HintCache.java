@@ -14,7 +14,7 @@ import java.util.Map;
 @Getter
 public class HintCache { // map of users with all of their remaining hint options
     private static Map<Long, Map<Hint, Integer>> hintCacheMap = new HashMap<>();
-    private static final int startHintNumber = 3;
+    private static final int startHintNumber = 2;
 
     private HintCache(){}
 

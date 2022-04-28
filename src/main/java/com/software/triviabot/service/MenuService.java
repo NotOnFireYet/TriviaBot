@@ -31,12 +31,29 @@ public class MenuService { // Constructs button layouts
     private final QuestionDAO questionDAO;
 
     /* BUILD BASE KEYBOARDS */
-    public ReplyKeyboardMarkup getStartQuizKeyboard(){
-        return getOneButtonBaseKeyboard("Начать викторину");
+    public ReplyKeyboardMarkup getMainKeyboard(){
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+        replyKeyboardMarkup.setSelective(true);
+        replyKeyboardMarkup.setResizeKeyboard(true);
+
+        KeyboardRow row1 = new KeyboardRow();
+        KeyboardRow row2 = new KeyboardRow();
+        KeyboardRow row3 = new KeyboardRow();
+        row1.add(new KeyboardButton("Начать викторину"));
+        row2.add(new KeyboardButton("Моя статистика"));
+        row3.add(new KeyboardButton("Напомнить правила"));
+
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(row1);
+        keyboard.add(row2);
+        keyboard.add(row3);
+
+        replyKeyboardMarkup.setKeyboard(keyboard);
+        return replyKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup getStatisticsKeyboard(){
-        return getOneButtonBaseKeyboard("Моя статистика");
+    public ReplyKeyboardMarkup getStartKeyboard(){
+        return getOneButtonBaseKeyboard("Начать викторину");
     }
 
     private ReplyKeyboardMarkup getOneButtonBaseKeyboard(String text){
@@ -113,10 +130,6 @@ public class MenuService { // Constructs button layouts
 
     public InlineKeyboardMarkup getNextQuestionKeyboard() {
         return getSingleButtonInlineKeyboard("Следующий вопрос", "nextQuestionCallback");
-    }
-
-    public InlineKeyboardMarkup getTryAgainKeyboard(){
-        return getSingleButtonInlineKeyboard("Попробовать снова", "tryAgainCallback");
     }
 
     private InlineKeyboardMarkup getSingleButtonInlineKeyboard(String text, String callbackValue){

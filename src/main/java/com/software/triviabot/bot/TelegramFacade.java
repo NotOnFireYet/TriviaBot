@@ -5,6 +5,8 @@ import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
 import com.software.triviabot.bot.handler.MessageHandler;
 import com.software.triviabot.cache.BotStateCache;
+import com.software.triviabot.cache.HintCache;
+import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.container.HintContainer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +24,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class TelegramFacade {
     private final MessageHandler messageHandler;
     private final CallbackQueryHandler callbackQueryHandler;
-    private final BotStateCache botStateCache;
 
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         if (update.hasCallbackQuery()) {
@@ -47,6 +48,8 @@ public class TelegramFacade {
                 botState = BotState.START;
                 break;
             case "Начать викторину":
+                QuestionCache.deleteQuestionCache(userId);
+                HintCache.setUpHints(userId);
                 botState = BotState.GAMESTART;
                 break;
             default: // if first ever command, set to START, if not, leave botstate the same
