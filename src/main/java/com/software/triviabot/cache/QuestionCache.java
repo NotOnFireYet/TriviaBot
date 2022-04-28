@@ -1,20 +1,22 @@
 package com.software.triviabot.cache;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
+// keeps current question id for each user
+// keeps track of what question to send next
+// and how much money it's worth
 @Slf4j
 @Service
 public class QuestionCache {
-    // keeps current question id for each user
-    // keeps track of what question to send next
     private static Map<Long, Integer> currentQuestionMap = new HashMap<>();
 
-    public static void incrementQuestionId(Long userId) {
+    private QuestionCache(){}
+
+    public static void incrementQuestionId(long userId) {
         if (currentQuestionMap.containsKey(userId)){
             int prevQuestion = currentQuestionMap.get(userId);
             currentQuestionMap.put(userId, prevQuestion + 1);

@@ -8,27 +8,23 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
+
 @Slf4j
 @Service
 @Getter
-public class HintCache {
-    // map of users with all of their hint options
-    // inside map contains remaining hints by name
+public class HintCache { // map of users with all of their remaining hint options
     private static Map<Long, Map<Hint, Integer>> hintCacheMap = new HashMap<>();
-    private static int startHintNumber = 3;
+    private static final int startHintNumber = 3;
+
+    private HintCache(){}
 
     public static void setUpHints(long userId){
-        if (hintCacheMap.containsKey(userId)){
-            // todo: throw exception
-            log.error("User {} already exists", userId);
-        } else {
-            // populating the hint map with unspent hints
-            Map<Hint, Integer> hintMap = new HashMap<>();
-            for (Hint hint : Hint.values()) {
-                hintMap.put(hint, startHintNumber);
-            }
-            hintCacheMap.put(userId, hintMap);
+        // populating the hint map with unspent hints
+        Map<Hint, Integer> hintMap = new HashMap<>();
+        for (Hint hint : Hint.values()) {
+            hintMap.put(hint, startHintNumber);
         }
+        hintCacheMap.put(userId, hintMap);
     }
 
     public static int getRemainingHints(long userId, Hint hint){
@@ -39,4 +35,9 @@ public class HintCache {
         int prevHintNumber = hintCacheMap.get(userId).get(hintName); // todo: throw exception on negative hints
         hintCacheMap.get(userId).put(hintName, prevHintNumber - 1);
     }
+
+    public static void deleteHintCache(long userId){
+        hintCacheMap.remove(userId);
+    }
+
 }

@@ -29,6 +29,11 @@ public class QuestionDAO {
         return questionRepo.findAll();
     }
 
+    public int getNumberOfQuestions(){
+        log.info("Fetching overall number of questions");
+        return findAllQuestions().size();
+    }
+
     public void saveQuestion(Question question){
         log.info("Saving question");
         questionRepo.save(question);
@@ -47,16 +52,24 @@ public class QuestionDAO {
         questionRepo.delete(question);
     }
 
-    public Question buildAndSaveQuestion(String text, List<String> answerTexts, String rightAnswerText){
+    public Question createQuestion(String text, String correctAnswerReaction, List<String> answerTexts, String rightAnswerText) {
         Question question = new Question();
         question.setText(text);
+        question.setCorrectAnswerReaction(correctAnswerReaction);
         ArrayList<Answer> answerList = new ArrayList<>();
 
+        boolean hasRightAnswer = false; // to prevent saving multiple right answers
         for (String answerText : answerTexts){
             Answer answer = new Answer();
             answer.setText(answerText);
             answer.setQuestion(question);
             answer.setIsCorrect(answerText.equals(rightAnswerText));
+
+            if (answer.getIsCorrect()){
+                if (hasRightAnswer)
+                    throw new IllegalArgumentException("Cannot create question with >1 correct answers.");
+                hasRightAnswer = true;
+            }
             answerList.add(answer);
         }
         question.setAnswers(answerList);

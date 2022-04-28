@@ -23,7 +23,9 @@ public class Score {
     @JoinColumn(name="user_id", nullable=false)
     private User user;
 
-    private int points;
+    private int answeredQuestions;
+
+    private boolean isSuccessful;
 
     private int totalMoney;
 

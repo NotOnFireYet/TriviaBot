@@ -17,13 +17,17 @@ public class TriviabotApplication {
     @Bean
     CommandLineRunner run(QuestionDAO questionDAO){
         return args -> {
-            questionDAO.buildAndSaveQuestion("На каком языке написан этот бот?",
+            questionDAO.createQuestion("На каком языке написан этот бот?",
+                "Правильно! Этот бот написан на Java с огромным количеством классов.",
                 Arrays.asList("Python", "Java", "C#", "русский язык жестов"),
                 "Java");
-            questionDAO.buildAndSaveQuestion("Сколько различают главных семейств динозавров?",
+            questionDAO.createQuestion("Сколько различают главных семейств динозавров?",
+                "Ответ верный! Динозавров разделяют на два основных семейства:" +
+                    " ящеротазовые и птицетазовые.\n Как ни странно, птицы произошли от ящеротазовых.",
                 Arrays.asList("1", "2", "3", "4"),
                 "2");
-            questionDAO.buildAndSaveQuestion("Понравилась ли вам эта викторина?",
+            questionDAO.createQuestion("Понравилась ли вам эта викторина?",
+                "Верно! Если бы тебе не понравилось, зачем забирать деньги?",
                 Arrays.asList("Очень", "В целом норм", "Не особо", "Худший опыт моей жизни"),
                 "Очень");
         };

@@ -6,7 +6,7 @@ import com.software.triviabot.bot.enums.BotState;
 import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
-import com.software.triviabot.config.HintConfig;
+import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.service.DAO.UserDAO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,11 +39,11 @@ public class MessageHandler {
             botStateCache.saveBotState(userId, BotState.ENTERNAME);
             return eventHandler.getStartMessage(chatId);
         }
-        botStateCache.saveBotState(userId, botState); //save state to cache
+        botStateCache.saveBotState(userId, botState);
 
         switch (botState) {
             case ENTERNAME:
-                return eventHandler.processEnteredName(userId, chatId, message.getText());
+                eventHandler.processEnteredName(userId, chatId, message.getText());
             case GAMESTART:
                 HintCache.setUpHints(userId);
                 telegramBot.execute(eventHandler.getGamestartMessage(userId, chatId));
@@ -53,7 +53,7 @@ public class MessageHandler {
                 questionCache.decreaseQuestionId(userId);
                 return eventHandler.sendNextQuestion(chatId, userId);
             case GIVEHINT:
-                return eventHandler.processHintRequest(chatId, userId, HintConfig.getHintByText(message.getText()));
+                return eventHandler.processHintRequest(chatId, userId, HintContainer.getHintByText(message.getText()));
             default:
                 throw new IllegalStateException("Unexpected value: " + botState);
         }

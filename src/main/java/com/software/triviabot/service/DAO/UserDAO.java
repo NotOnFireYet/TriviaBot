@@ -37,7 +37,7 @@ public class UserDAO {
     }
 
     public void saveScoreToUser(long userId, Score score){
-        log.info("Saving score {} to user {}", score.getPoints(), userId);
+        log.info("Saving score {} to user {}", score.getAnsweredQuestions(), userId);
         User user = userRepo.getById(userId);
         List<Score> newScores = user.getScores();
         newScores.add(score);

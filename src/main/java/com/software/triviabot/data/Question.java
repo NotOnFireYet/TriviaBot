@@ -26,8 +26,6 @@ public class Question {
 
     private String correctAnswerReaction; // todo: implement reactions
 
-    private String wrongAnswerReaction;
-
     @Column(unique=true)
     @OneToMany(mappedBy="question", cascade = CascadeType.ALL,
         fetch = FetchType.LAZY, orphanRemoval = true)

@@ -11,11 +11,16 @@ import java.util.Map;
 @Slf4j
 @Service
 @Getter
-public class BotStateCache {
-    // Keeps current bot state for each user id
-    private final Map<Long, BotState> botStateMap = new HashMap<>();
+public class BotStateCache { // Keeps current bot state for each user id
+    private static Map<Long, BotState> botStateMap = new HashMap<>();
 
-    public void saveBotState(Long userId, BotState botState) {
+    private BotStateCache(){}
+
+    public static BotState getCurrentState(long userId){
+        return botStateMap.get(userId);
+    }
+
+    public static void saveBotState(long userId, BotState botState) {
         botStateMap.put(userId, botState);
         log.info("BotState for user {}: {}", userId, botState);
     }

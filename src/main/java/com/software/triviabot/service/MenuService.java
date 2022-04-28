@@ -2,7 +2,7 @@ package com.software.triviabot.service;
 
 import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.cache.QuestionCache;
-import com.software.triviabot.config.HintConfig;
+import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.data.Answer;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.service.DAO.QuestionDAO;
@@ -32,13 +32,21 @@ public class MenuService { // Constructs button layouts
 
     /* BUILD BASE KEYBOARDS */
     public ReplyKeyboardMarkup getStartQuizKeyboard(){
+        return getOneButtonBaseKeyboard("Начать викторину");
+    }
+
+    public ReplyKeyboardMarkup getStatisticsKeyboard(){
+        return getOneButtonBaseKeyboard("Моя статистика");
+    }
+
+    private ReplyKeyboardMarkup getOneButtonBaseKeyboard(String text){
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
 
         List<KeyboardRow> keyboard = new ArrayList<>();
         KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton("Начать викторину"));
+        row1.add(new KeyboardButton(text));
         keyboard.add(row1);
 
         replyKeyboardMarkup.setKeyboard(keyboard);
@@ -57,7 +65,7 @@ public class MenuService { // Constructs button layouts
         // create and set text to all the hint buttons
         for (Hint hint : Hint.values()){
             KeyboardButton button = new KeyboardButton();
-            button.setText(HintConfig.getHintText(hint));
+            button.setText(HintContainer.getHintText(hint));
             row.add(button);
         }
         keyboard.add(row);

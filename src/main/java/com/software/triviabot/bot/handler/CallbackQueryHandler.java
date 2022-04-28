@@ -2,6 +2,8 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.enums.BotState;
 import com.software.triviabot.cache.BotStateCache;
+import com.software.triviabot.cache.HintCache;
+import com.software.triviabot.cache.QuestionCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class CallbackQueryHandler {
-    private final BotStateCache botStateCache;
     private final EventHandler eventHandler;
 
     public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) throws TelegramApiException {
@@ -24,7 +25,7 @@ public class CallbackQueryHandler {
         BotApiMethod<?> callBackAnswer;
 
         String data = buttonQuery.getData();
-        botStateCache.saveBotState(userId, BotState.GETANSWER);
+        BotStateCache.saveBotState(userId, BotState.GETANSWER);
         log.info("Received callback data: {}", data);
         switch (data) {
             case ("answerCallbackCorrect"):
@@ -34,11 +35,13 @@ public class CallbackQueryHandler {
                 callBackAnswer = eventHandler.processAnswer(chatId, userId, false);
                 break;
             case ("nextQuestionCallback"):
-                botStateCache.saveBotState(userId, BotState.SENDQUESTION);
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
                 break;
             case ("tryAgainCallback"):
-                botStateCache.saveBotState(userId, BotState.SCORE);
+                QuestionCache.deleteQuestionCache(userId);
+                HintCache.setUpHints(userId);
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
                 break;
             default:

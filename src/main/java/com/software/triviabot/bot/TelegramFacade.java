@@ -5,7 +5,7 @@ import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
 import com.software.triviabot.bot.handler.MessageHandler;
 import com.software.triviabot.cache.BotStateCache;
-import com.software.triviabot.config.HintConfig;
+import com.software.triviabot.container.HintContainer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,14 +50,14 @@ public class TelegramFacade {
                 botState = BotState.GAMESTART;
                 break;
             default: // if first ever command, set to START, if not, leave botstate the same
-                botState = botStateCache.getBotStateMap().get(userId) == null ?
-                    BotState.START : botStateCache.getBotStateMap().get(userId);
+                botState = BotStateCache.getCurrentState(userId) == null ?
+                    BotState.START : BotStateCache.getCurrentState(userId);
         }
 
         // reaction to hint buttons
-        if (inputText.equals(HintConfig.getHintText(Hint.AUDIENCE_HELP)) ||
-            inputText.equals(HintConfig.getHintText(Hint.CALL_FRIEND)) ||
-            inputText.equals(HintConfig.getHintText(Hint.FIFTY_FIFTY))) {
+        if (inputText.equals(HintContainer.getHintText(Hint.AUDIENCE_HELP)) ||
+            inputText.equals(HintContainer.getHintText(Hint.CALL_FRIEND)) ||
+            inputText.equals(HintContainer.getHintText(Hint.FIFTY_FIFTY))) {
             botState = BotState.GIVEHINT;
         }
 

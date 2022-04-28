@@ -7,8 +7,9 @@ import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
-import com.software.triviabot.cache.ScoreCache;
-import com.software.triviabot.config.HintConfig;
+import com.software.triviabot.container.FailMessageContainer;
+import com.software.triviabot.container.HintContainer;
+import com.software.triviabot.container.QuestionPriceContainer;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.data.Score;
 import com.software.triviabot.data.User;
@@ -33,8 +34,6 @@ public class EventHandler {
     private final ScoreDAO scoreDAO;
     private final MenuService menuService;
 
-    private final QuestionCache questionCache;
-    private final ScoreCache scoreCache;
     private final BotStateCache botStateCache;
 
     ////////////* NEW USER START EVENTS */////////////
@@ -81,23 +80,27 @@ public class EventHandler {
 
     ////////////* QUIZ GAME EVENTS *////////////
     public SendMessage processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
+        int questionId = QuestionCache.getCurrentQuestionId(userId);
+        String correctMessage = questionDAO.findQuestionById(questionId).getCorrectAnswerReaction();
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         if (isCorrect) {
-            message.setText("Правильно!");
-            scoreCache.incrementScore(userId);
-        }
-        else
-            message.setText("Ты пожалеешь об этой ошибке.");
+            String text = correctMessage;
+            if (questionId != questionDAO.getNumberOfQuestions())
+                text += "\n" + QuestionPriceContainer.getPriceByQuestionId(questionId) + " рублей твои.";
+            message.setText(text);
 
-        // see if this was the last question
-        if (!questionDAO.exists(QuestionCache.getNextQuestionId(userId))) {
-            Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
-            telegramBot.execute(message);
-            return processScoreEvent(chatId, userId);
-        }
-        message.setReplyMarkup(menuService.getNextQuestionKeyboard());
-        return message;
+            // see if this was the last question
+            if (!questionDAO.exists(QuestionCache.getNextQuestionId(userId))) {
+                BotStateCache.saveBotState(userId, BotState.SCORE);
+                Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
+                telegramBot.execute(message);
+                return processScoreEvent(chatId, userId, true);
+            }
+            message.setReplyMarkup(menuService.getNextQuestionKeyboard());
+            return message;
+        } else
+            return processScoreEvent(chatId, userId, false);
     }
 
     ////////////* HINTS *////////////
@@ -105,36 +108,38 @@ public class EventHandler {
         HintCache.decreaseHint(userId, hint);
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText("Вы выбрали подсказку \"" + HintConfig.getHintText(hint) + "\"." +
+        message.setText("Ты выбрал подсказку \"" + HintContainer.getHintText(hint) + "\"." +
             "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint));
 
         Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
         telegramBot.execute(message);
 
+        int questionId = QuestionCache.getCurrentQuestionId(userId);
         switch (hint) {
             case AUDIENCE_HELP:
                 log.info("Audience help request received");
                 break;
             case FIFTY_FIFTY:
                 log.info("50/50 request received");
-                return processFiftyFiftyRequest(chatId, userId, hint);
+                return processFiftyFiftyRequest(chatId, userId, questionId);
             case CALL_FRIEND:
                 log.info("Call friend request received");
-                break;
+                return processCallFriendRequest(chatId, userId, questionId);
             default:
-                log.info("Unknown hint request");
+                log.info("Unknown hint request"); // todo: throw exception
         }
         return null;
     }
 
-    public SendMessage processFiftyFiftyRequest(long chatId, long userId, Hint hint) throws TelegramApiException {
+    public SendMessage processCallFriendRequest(long chatId, long userId, int questionId) {
+        return null;
+    }
+
+    public SendMessage processFiftyFiftyRequest(long chatId, long userId, int questionId) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-
-        int questionId = QuestionCache.getCurrentQuestionId(userId);
         message.setReplyMarkup(menuService.getFiftyFiftyKeyboard(userId));
         message.setText("\uD83D\uDD39 " + questionDAO.findQuestionById(questionId).getText());
-
         return message;
     }
 
@@ -152,26 +157,48 @@ public class EventHandler {
     }
 
     public SendMessage getDontGetDistracted(long chatId, long userId) {
+        String name = userDAO.findUserById(userId).getName();
         SendMessage message = new SendMessage();
-        message.setText("Не будем отвлекаться.");
+        message.setText(name + ", не будем отвлекаться.");
         message.setChatId(String.valueOf(chatId));
         return message;
     }
 
     ////////////* GAME END EVENTS *////////////
-    public SendMessage processScoreEvent(long chatId, long userId){
-        Score score = scoreCache.getCurrentScoreMap().get(userId);
-        scoreCache.deleteScoreCache(userId);
-        QuestionCache.deleteQuestionCache(userId);
+    public SendMessage processScoreEvent(long chatId, long userId, boolean isSuccessful) throws TelegramApiException {
+        Score score = new Score();
+        score.setUser(userDAO.findUserById(userId));
+        score.setSuccessful(isSuccessful);
+        int questionId = QuestionCache.getCurrentQuestionId(userId);
+        score.setAnsweredQuestions(questionId);
+        score.setTotalMoney(QuestionPriceContainer.getPriceByQuestionId(questionId));
         scoreDAO.saveScore(score);
         userDAO.saveScoreToUser(userId, score);
-        return getScoreMessage(chatId, score.getPoints());
+
+        Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
+        telegramBot.execute(getScoreMessage(chatId, userId, isSuccessful));
+
+        return getTryAgainMessage(chatId);
     }
 
-    private SendMessage getScoreMessage(long chatId, int points){
+    private SendMessage getScoreMessage(long chatId, long userId, boolean isSuccessful) throws TelegramApiException {
+        SendMessage message = new SendMessage();
+        if (isSuccessful){
+            message.setText("Вопросы закончены! Миллион рублей твои!");
+        } else {
+            message.setText("Увы, ответ неправильный! " +
+                QuestionPriceContainer.getPriceByQuestionId(QuestionCache.getCurrentQuestionId(userId)) +
+                    FailMessageContainer.getRandomFailMessage());
+            message.setChatId(String.valueOf(chatId));
+        }
+        message.setReplyMarkup(menuService.getStatisticsKeyboard());
+        return message;
+    }
+
+    private SendMessage getTryAgainMessage(long chatId){
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        message.setText("Вопросы закончены! Твой счет: " + points);
+        message.setText("Ты можешь посмотреть свою статистику или попробовать еще раз.");
         message.setReplyMarkup(menuService.getTryAgainKeyboard());
         return message;
     }
