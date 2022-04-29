@@ -9,7 +9,7 @@ import java.util.Map;
 // keeps prices corresponding to each question number
 // for easier price and question editing
 @Component
-public class QuestionPriceContainer {
+public class PriceContainer {
     private static final Map<Integer, Integer> questionPriceMap = ImmutableMap.<Integer, Integer>builder()
         .put(1, 100)
         .put(2, 200)

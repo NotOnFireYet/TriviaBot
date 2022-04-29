@@ -9,7 +9,7 @@ import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.container.FailMessageContainer;
 import com.software.triviabot.container.HintContainer;
-import com.software.triviabot.container.QuestionPriceContainer;
+import com.software.triviabot.container.PriceContainer;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.data.Score;
 import com.software.triviabot.data.User;
@@ -21,7 +21,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -44,14 +43,16 @@ public class EventHandler {
 
     private SendMessage getGreetingWithRules(long chatId, String name) throws TelegramApiException {
         Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
-        telegramBot.execute(getSimpleMessage(chatId, "Здравствуй, " + name + "!"));;
+        SendMessage message = buildMessage(chatId, "Здравствуй, " + name + "!");
+        message.setReplyMarkup(menuService.getStartKeyboard());
+        telegramBot.execute(message);
         return getRulesMessage(chatId);
     }
 
     public SendMessage getRulesMessage(long chatId){
         String rules = "Тебе предстоит 15 вопросов. " +
             "\nКаждый верный ответ увеличивает твой выигрыш, каждый неверный - " +
-            "полностью его обнуляет.\nНо не все так просто!" +
+            "заканчивает игру.\nНо не все так просто!" +
             "\nТебе доступны подсказки:\n\n" +
             "<b>" + HintContainer.getHintText(Hint.FIFTY_FIFTY) + "</b>\n бот оставит 1 верный и 1 неверный ответ\n\n"+
             "<b>" + HintContainer.getHintText(Hint.CALL_FRIEND) + "</b>\n бот покажет, как на этот вопрос ответил другой рандомный пользователь " +
@@ -59,16 +60,9 @@ public class EventHandler {
             "<b>" + HintContainer.getHintText(Hint.AUDIENCE_HELP) + "</b>\n бот покажет статистику ответов заранее опрошенной аудитории\n\n"+
             "Каждую подсказку можно использовать 2 раза за игру.\n" +
             "Желаем удачи!";
-        SendMessage message = getSimpleMessage(chatId, rules);
+        SendMessage message = buildMessage(chatId, rules);
+        message.enableMarkdown(true);
         message.enableHtml(true);
-        message.setReplyMarkup(menuService.getStartKeyboard());
-        return message;
-    }
-
-    private SendMessage getSimpleMessage(long chatId, String text){
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText(text);
         return message;
     }
 
@@ -90,35 +84,28 @@ public class EventHandler {
         return message;
     }
 
-    public SendMessage getGamestartMessage(long chatId, long userId){
-        SendMessage message = new SendMessage();
-        message.setText("Начнем!");
-        message.setChatId(String.valueOf(chatId));
+    public SendMessage getKeyboardSwitchMessage(long chatId){
+        SendMessage message = buildMessage(chatId, "Начнем!");
         message.setReplyMarkup(menuService.getHintKeyboard());
-        botStateCache.saveBotState(userId, BotState.SENDQUESTION);
         return message;
     }
 
 
     ////////////* QUIZ GAME EVENTS *////////////
     public SendMessage processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
-        int questionId = QuestionCache.getCurrentQuestionId(userId);
-        String correctMessage = questionDAO.findQuestionById(questionId).getCorrectAnswerReaction();
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
         if (isCorrect) {
-            String text = correctMessage;
-            if (questionId != questionDAO.getNumberOfQuestions())
-                text += "\n" + QuestionPriceContainer.getPriceByQuestionId(questionId) + " рублей твои!";
-            message.setText(text);
+            int questionId = QuestionCache.getCurrentQuestionId(userId);
+            String text = questionDAO.findQuestionById(questionId).getCorrectAnswerReaction();
+            SendMessage message = buildMessage(chatId, text);
 
             // see if this was the last question
             if (!questionDAO.exists(QuestionCache.getNextQuestionId(userId))) {
-                BotStateCache.saveBotState(userId, BotState.SCORE);
                 Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
                 telegramBot.execute(message);
                 return processScoreEvent(chatId, userId, true);
             }
+            text += "\n" + PriceContainer.getPriceByQuestionId(questionId) + " рублей твои!";
+            message.setText(text);
             message.setReplyMarkup(menuService.getNextQuestionKeyboard());
             return message;
         } else
@@ -126,31 +113,32 @@ public class EventHandler {
     }
 
     ////////////* HINTS *////////////
-    public BotApiMethod<?> processHintRequest(long chatId, long userId, Hint hint) throws TelegramApiException {
+    public SendMessage processHintRequest(long chatId, long userId, Hint hint) throws TelegramApiException {
         HintCache.decreaseHint(userId, hint);
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
-        message.setText("Ты выбрал подсказку \"" + HintContainer.getHintText(hint) + "\"." +
-            "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint));
+        String text = "Ты выбрал подсказку \"" + HintContainer.getHintText(hint) + "\"." +
+            "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint);
 
         Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
-        telegramBot.execute(message);
+        telegramBot.execute(buildMessage(chatId, text));
 
         int questionId = QuestionCache.getCurrentQuestionId(userId);
+        SendMessage hintProcess = new SendMessage();
         switch (hint) {
             case AUDIENCE_HELP:
                 log.info("Audience help request received");
                 break;
             case FIFTY_FIFTY:
                 log.info("50/50 request received");
-                return processFiftyFiftyRequest(chatId, userId, questionId);
+                hintProcess = processFiftyFiftyRequest(chatId, userId, questionId);
+                break;
             case CALL_FRIEND:
                 log.info("Call friend request received");
-                return processCallFriendRequest(chatId, userId, questionId);
+                hintProcess = processCallFriendRequest(chatId, userId, questionId);
+                break;
             default:
-                log.info("Unknown hint request"); // todo: throw exception
+                throw new IllegalArgumentException("Unknown hint value");
         }
-        return null;
+        return hintProcess;
     }
 
     public SendMessage processCallFriendRequest(long chatId, long userId, int questionId) {
@@ -158,10 +146,9 @@ public class EventHandler {
     }
 
     public SendMessage processFiftyFiftyRequest(long chatId, long userId, int questionId) {
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
+        String text = "\uD83D\uDD39 " + questionDAO.findQuestionById(questionId).getText();
+        SendMessage message = buildMessage(chatId, text);
         message.setReplyMarkup(menuService.getFiftyFiftyKeyboard(userId));
-        message.setText("\uD83D\uDD39 " + questionDAO.findQuestionById(questionId).getText());
         return message;
     }
 
@@ -171,50 +158,68 @@ public class EventHandler {
         int questionId = QuestionCache.getCurrentQuestionId(userId);
         Question question = questionDAO.findQuestionById(questionId);
 
-        SendMessage message = new SendMessage();
-        message.setChatId(String.valueOf(chatId));
+        SendMessage message = buildMessage(chatId, "\uD83D\uDD39 " + question.getText());
         message.setReplyMarkup(menuService.getQuestionKeyboard(question.getAnswers()));
-        message.setText("\uD83D\uDD39 " + question.getText());
         return message;
     }
 
     public SendMessage getDontGetDistracted(long chatId, long userId) {
         String name = userDAO.findUserById(userId).getName();
-        SendMessage message = new SendMessage();
-        message.setText(name + ", не будем отвлекаться.");
-        message.setChatId(String.valueOf(chatId));
-        return message;
+        return buildMessage(chatId, name + ", не будем отвлекаться.");
     }
 
     ////////////* GAME END EVENTS *////////////
     public SendMessage processScoreEvent(long chatId, long userId, boolean isSuccessful) throws TelegramApiException {
+        BotStateCache.saveBotState(userId, BotState.SCORE);
+
         Score score = new Score();
         score.setUser(userDAO.findUserById(userId));
         score.setSuccessful(isSuccessful);
+
         int questionId = QuestionCache.getCurrentQuestionId(userId);
         score.setAnsweredQuestions(questionId);
-        score.setTotalMoney(QuestionPriceContainer.getPriceByQuestionId(questionId));
+        score.setGainedMoney(PriceContainer.getPriceByQuestionId(questionId));
+
         scoreDAO.saveScore(score);
         userDAO.saveScoreToUser(userId, score);
 
         Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
         telegramBot.execute(getScoreMessage(chatId, userId, isSuccessful));
 
-        return getSimpleMessage(chatId, "Ты можешь посмотреть свою статистику или попробовать еще раз.");
+        return buildMessage(chatId, "Ты можешь посмотреть свою статистику или попробовать еще раз.");
     }
 
     private SendMessage getScoreMessage(long chatId, long userId, boolean isSuccessful) {
+        int lostMoney = 1000000 - PriceContainer.getPriceByQuestionId(QuestionCache.getCurrentQuestionId(userId));
+        String text = isSuccessful ? "Вопросы закончены! Миллион рублей твои!" :
+            "Увы, ответ неправильный! " +
+                lostMoney + FailMessageContainer.getRandomFailMessage();
+        SendMessage message = buildMessage(chatId, text);
+        message.setReplyMarkup(menuService.getMainKeyboard());
+        return message;
+    }
+
+    ////////////* MAINMENU *////////////
+    public SendMessage sendStatsMessage(long chatId, long userId) {
+        int numOfTries = scoreDAO.findScoresByUserId(userId).size();
+        int numOfWins = scoreDAO.getNumberOfWins(userId);
+        long totalMoney = scoreDAO.getTotalMoney(userId);
+        double winPercentage = numOfWins / (double)numOfTries * 100;
+        String text = "Статистика @" + userDAO.findUserById(userId).getUsername() + ":"
+            + "\n\n\uD83D\uDCC8<b> Всего игр:</b> " + numOfTries // graph emoji
+            + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>" + // trophy emoji
+            "\n\n\uD83D\uDCB8<b> Выиграно</b>: " + totalMoney + "р."; // money stack with wings emoji
+        SendMessage message = buildMessage(chatId, text);
+        message.enableMarkdown(true);
+        message.enableHtml(true);
+        return message;
+    }
+
+    ////////////* UTILITY *////////////
+    private SendMessage buildMessage(long chatId, String text){
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
-        if (isSuccessful){
-            message.setText("Вопросы закончены! Миллион рублей твои!");
-        } else {
-            message.setText("Увы, ответ неправильный! " +
-                QuestionPriceContainer.getPriceByQuestionId(QuestionCache.getCurrentQuestionId(userId)) +
-                    FailMessageContainer.getRandomFailMessage());
-            message.setChatId(String.valueOf(chatId));
-        }
-        message.setReplyMarkup(menuService.getMainKeyboard());
+        message.setText(text);
         return message;
     }
 }

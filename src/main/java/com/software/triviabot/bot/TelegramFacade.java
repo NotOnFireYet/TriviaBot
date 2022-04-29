@@ -52,6 +52,12 @@ public class TelegramFacade {
                 HintCache.setUpHints(userId);
                 botState = BotState.GAMESTART;
                 break;
+            case "Напомнить правила":
+                botState = BotState.REMINDRULES;
+                break;
+            case "Моя статистика":
+                botState = BotState.GETSTATS;
+                break;
             default: // if first ever command, set to START, if not, leave botstate the same
                 botState = BotStateCache.getCurrentState(userId) == null ?
                     BotState.START : BotStateCache.getCurrentState(userId);

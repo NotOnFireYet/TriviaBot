@@ -42,6 +42,7 @@ public class MenuService { // Constructs button layouts
         row1.add(new KeyboardButton("Начать викторину"));
         row2.add(new KeyboardButton("Моя статистика"));
         row3.add(new KeyboardButton("Напомнить правила"));
+        row3.add(new KeyboardButton("Удалить мои данные"));
 
         List<KeyboardRow> keyboard = new ArrayList<>();
         keyboard.add(row1);

@@ -31,7 +31,6 @@ public class MessageHandler {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
 
-        // if new user
         if (!userDAO.exists(userId)) {
             eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
             BotStateCache.saveBotState(userId, BotState.ENTERNAME);
@@ -40,11 +39,15 @@ public class MessageHandler {
         BotStateCache.saveBotState(userId, botState);
 
         switch (botState) {
+            case START:
+                BotStateCache.saveBotState(userId, BotState.ENTERNAME);
+                return eventHandler.getStartMessage(chatId);
             case ENTERNAME:
                 return eventHandler.processEnteredName(userId, chatId, message.getText());
             case GAMESTART:
                 HintCache.setUpHints(userId);
-                telegramBot.execute(eventHandler.getGamestartMessage(userId, chatId));
+                telegramBot.execute(eventHandler.getKeyboardSwitchMessage(chatId));
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 return eventHandler.sendNextQuestion(chatId, userId);
             case SENDQUESTION:
                 telegramBot.execute(eventHandler.getDontGetDistracted(chatId, userId));
@@ -52,8 +55,14 @@ public class MessageHandler {
                 return eventHandler.sendNextQuestion(chatId, userId);
             case GIVEHINT:
                 return eventHandler.processHintRequest(chatId, userId, HintContainer.getHintByText(message.getText()));
+            case REMINDRULES:
+                BotStateCache.saveBotState(userId, BotState.SCORE);
+                return eventHandler.getRulesMessage(chatId);
+            case GETSTATS:
+                BotStateCache.saveBotState(userId, BotState.SCORE);
+                return eventHandler.sendStatsMessage(chatId, userId);
             default:
-                throw new IllegalStateException("Unexpected value: " + botState);
+                throw new IllegalStateException("Unknown bot state: " + botState);
         }
     }
 }

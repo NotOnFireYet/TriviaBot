@@ -21,7 +21,7 @@ public class FailMessageContainer {
 
     public static String getRandomFailMessage(){
         Random rnd = new Random();
-        int max = messages.size() + 1;
+        int max = messages.size();
         int min = 1;
         return messages.get(rnd.nextInt(max - min) + min);
     }
