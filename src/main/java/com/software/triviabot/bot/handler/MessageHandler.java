@@ -1,8 +1,9 @@
 package com.software.triviabot.bot.handler;
 
-import com.software.triviabot.bot.ApplicationContextProvider;
-import com.software.triviabot.bot.Bot;
+import com.software.triviabot.bot.ReplySender;
 import com.software.triviabot.bot.enums.BotState;
+import com.software.triviabot.bot.enums.Hint;
+import com.software.triviabot.cache.ActiveMessageCache;
 import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
@@ -23,46 +24,59 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class MessageHandler {
     private final UserDAO userDAO;
     private final EventHandler eventHandler;
+    private final ReplySender sender;
 
     public BotApiMethod<?> handle(Message message, BotState botState) throws TelegramApiException {
-        Bot telegramBot = ApplicationContextProvider.getApplicationContext().getBean(Bot.class);
         long userId = message.getFrom().getId();
         long chatId = message.getChatId();
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
 
-        if (!userDAO.exists(userId)) {
-            eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
-            BotStateCache.saveBotState(userId, BotState.ENTERNAME);
-            return eventHandler.getStartMessage(chatId);
-        }
         BotStateCache.saveBotState(userId, botState);
-
+        Message response;
         switch (botState) {
             case START:
+                if (!userDAO.exists(userId))
+                    eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
                 BotStateCache.saveBotState(userId, BotState.ENTERNAME);
-                return eventHandler.getStartMessage(chatId);
+                response = sender.send(eventHandler.getStartMessage(chatId)); // sends the greeting
+                ActiveMessageCache.setMessage(response); // sets the greeting as the message it's gonna be editing
+                break;
+
             case ENTERNAME:
-                return eventHandler.processEnteredName(userId, chatId, message.getText());
+                sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
+                break;
+
             case GAMESTART:
                 HintCache.setUpHints(userId);
-                telegramBot.execute(eventHandler.getKeyboardSwitchMessage(chatId));
+                eventHandler.sendNextQuestion(chatId, userId);
                 BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
-                return eventHandler.sendNextQuestion(chatId, userId);
+                break;
+
             case SENDQUESTION:
-                telegramBot.execute(eventHandler.getDontGetDistracted(chatId, userId));
+                eventHandler.editMessageText(chatId, "This code is evidence of my mental decline");
                 QuestionCache.decreaseQuestionId(userId);
-                return eventHandler.sendNextQuestion(chatId, userId);
+                eventHandler.sendNextQuestion(chatId, userId);
+                break;
+
             case GIVEHINT:
-                return eventHandler.processHintRequest(chatId, userId, HintContainer.getHintByText(message.getText()));
+                Hint hint = HintContainer.getHintByText(message.getText());
+                eventHandler.processHintRequest(chatId, userId, hint);
+                break;
+
             case REMINDRULES:
                 BotStateCache.saveBotState(userId, BotState.SCORE);
-                return eventHandler.getRulesMessage(chatId);
+                sender.send(eventHandler.getRulesMessage(chatId));
+                break;
+
             case GETSTATS:
                 BotStateCache.saveBotState(userId, BotState.SCORE);
-                return eventHandler.sendStatsMessage(chatId, userId);
+                sender.send(eventHandler.sendStatsMessage(chatId, userId));
+                break;
+
             default:
                 throw new IllegalStateException("Unknown bot state: " + botState);
         }
+        return null;
     }
 }

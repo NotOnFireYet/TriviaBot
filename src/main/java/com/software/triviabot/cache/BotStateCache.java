@@ -10,7 +10,6 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@Getter
 public class BotStateCache { // Keeps current bot state for each user id
     private static Map<Long, BotState> botStateMap = new HashMap<>();
 

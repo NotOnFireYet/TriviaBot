@@ -11,7 +11,6 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@Getter
 public class HintCache { // map of users with all of their remaining hint options
     private static Map<Long, Map<Hint, Integer>> hintCacheMap = new HashMap<>();
     private static final int startHintNumber = 2;

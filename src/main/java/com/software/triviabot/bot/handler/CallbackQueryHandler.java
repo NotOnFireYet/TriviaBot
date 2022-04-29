@@ -1,9 +1,8 @@
 package com.software.triviabot.bot.handler;
 
+import com.software.triviabot.bot.ReplySender;
 import com.software.triviabot.bot.enums.BotState;
 import com.software.triviabot.cache.BotStateCache;
-import com.software.triviabot.cache.HintCache;
-import com.software.triviabot.cache.QuestionCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,30 +16,29 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class CallbackQueryHandler {
     private final EventHandler eventHandler;
+    private final ReplySender sender;
 
     public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) throws TelegramApiException {
         long chatId = buttonQuery.getMessage().getChatId();
         long userId = buttonQuery.getFrom().getId();
-
-        BotApiMethod<?> callBackAnswer;
 
         String data = buttonQuery.getData();
         BotStateCache.saveBotState(userId, BotState.GETANSWER);
         log.info("Received callback data: {}", data);
         switch (data) {
             case ("answerCallbackCorrect"):
-                callBackAnswer = eventHandler.processAnswer(chatId, userId, true);
+                eventHandler.processAnswer(chatId, userId, true);
                 break;
             case ("answerCallbackWrong"):
-                callBackAnswer = eventHandler.processAnswer(chatId, userId, false);
+                eventHandler.processAnswer(chatId, userId, false);
                 break;
             case ("nextQuestionCallback"):
                 BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
-                callBackAnswer = eventHandler.sendNextQuestion(chatId, userId);
+                eventHandler.sendNextQuestion(chatId, userId);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown callback");
         }
-        return callBackAnswer;
+        return null;
     }
 }

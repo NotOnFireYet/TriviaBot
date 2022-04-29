@@ -3,6 +3,7 @@ package com.software.triviabot.bot;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;

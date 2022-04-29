@@ -71,6 +71,5 @@ public class TelegramFacade {
         }
 
         return messageHandler.handle(message, botState);
-
     }
 }
