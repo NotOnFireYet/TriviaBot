@@ -58,6 +58,9 @@ public class TelegramFacade {
             case "Моя статистика":
                 botState = BotState.GETSTATS;
                 break;
+            case "Удалить мои данные":
+                botState = BotState.DELETEDATA;
+                break;
             default: // if first ever command, set to START, if not, leave botstate the same
                 botState = BotStateCache.getCurrentState(userId) == null ?
                     BotState.START : BotStateCache.getCurrentState(userId);

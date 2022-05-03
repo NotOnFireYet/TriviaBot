@@ -19,14 +19,13 @@ import com.software.triviabot.service.DAO.UserDAO;
 import com.software.triviabot.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.dynamic.TypeResolutionStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
@@ -47,7 +46,7 @@ public class EventHandler {
 
     private SendMessage getGreetingWithRules(long chatId, String name) throws TelegramApiException {
         SendMessage message = buildMessage(chatId, "Здравствуй, " + name + "!");
-        message.setReplyMarkup(menuService.getStartKeyboard());
+        message.setReplyMarkup(menuService.getStartMenu());
         sender.send(message);
         return getRulesMessage(chatId);
     }
@@ -86,7 +85,7 @@ public class EventHandler {
 
     public SendMessage getKeyboardSwitchMessage(long chatId){
         SendMessage message = buildMessage(chatId, "Начнем!");
-        message.setReplyMarkup(menuService.getHintKeyboard());
+        message.setReplyMarkup(menuService.getHintMenu());
         return message;
     }
 
@@ -115,47 +114,36 @@ public class EventHandler {
         HintCache.decreaseHint(userId, hint);
         String text = "Ты выбрал подсказку \"" + HintContainer.getHintText(hint) + "\"." +
             "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint);
-        sender.send(buildMessage(chatId, text));
-
-        int questionId = QuestionCache.getCurrentQuestionId(userId);
-        SendMessage hintProcess = new SendMessage();
-        switch (hint) {
-            case AUDIENCE_HELP:
-                log.info("Audience help request received");
-                break;
-            case FIFTY_FIFTY:
-                log.info("50/50 request received");
-                hintProcess = processFiftyFiftyRequest(chatId, userId, questionId);
-                break;
-            case CALL_FRIEND:
-                log.info("Call friend request received");
-                hintProcess = processCallFriendRequest(chatId, userId, questionId);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown hint value");
-        }
-        ActiveMessageCache.setMessage(sender.send(hintProcess));
+        editMessageText(chatId, text);
+        editInlineMarkup(chatId, menuService.getHintOkKeyboard(hint));
     }
 
-    public SendMessage processCallFriendRequest(long chatId, long userId, int questionId) {
-        return null;
+    public void processCallFriendRequest(long chatId, long userId, int questionId) {
+        log.info("Call Friend invoked.");
     }
 
-    public SendMessage processFiftyFiftyRequest(long chatId, long userId, int questionId) {
+    public void processAudienceHelpRequest(long chatId, long userId, int questionId) {
+        log.info("Audience Help invoked.");
+    }
+
+    public void processFiftyFiftyRequest(long chatId, long userId, int questionId) throws TelegramApiException {
         String text = "\uD83D\uDD39 " + questionDAO.findQuestionById(questionId).getText();
-        SendMessage message = buildMessage(chatId, text);
-        message.setReplyMarkup(menuService.getFiftyFiftyKeyboard(userId));
-        return message;
+        editMessageText(chatId, text);
+        editInlineMarkup(chatId, menuService.getFiftyFiftyKeyboard(userId));
+    }
+
+    public void deleteUserMessage(long chatId, int messageId) throws TelegramApiException {
+        DeleteMessage deleteMessage = new DeleteMessage();
+        deleteMessage.setMessageId(messageId);
+        deleteMessage.setChatId(String.valueOf(chatId));
+        sender.delete(deleteMessage);
     }
 
     // returns the next question message according to QuestionCache
     public void sendNextQuestion(long chatId, long userId) throws TelegramApiException {
-        log.info("Editing message with text: {}", ActiveMessageCache.getMessage().getText());
-
         QuestionCache.incrementQuestionId(userId);
         int questionId = QuestionCache.getCurrentQuestionId(userId);
         Question question = questionDAO.findQuestionById(questionId);
-
         String text = "\uD83D\uDD39 " + question.getText();
         InlineKeyboardMarkup keyboard = menuService.getQuestionKeyboard(question.getAnswers());
 
@@ -168,11 +156,6 @@ public class EventHandler {
             editMessageText(chatId, text);
             editInlineMarkup(chatId, keyboard);
         }
-    }
-
-    public SendMessage getDontGetDistracted(long chatId, long userId) {
-        String name = userDAO.findUserById(userId).getName();
-        return buildMessage(chatId, name + ", не будем отвлекаться.");
     }
 
     ////////////* GAME END EVENTS *////////////
@@ -193,7 +176,7 @@ public class EventHandler {
         getScoreMessage(chatId, userId, isSuccessful);
 
         SendMessage tryAgainMessage = buildMessage(chatId, "Ты можешь посмотреть свою статистику или попробовать еще раз.");
-        tryAgainMessage.setReplyMarkup(menuService.getMainKeyboard());
+        tryAgainMessage.setReplyMarkup(menuService.getMainMenu());
         sender.send(tryAgainMessage);
     }
 
@@ -206,13 +189,14 @@ public class EventHandler {
     }
 
     ////////////* MAINMENU *////////////
-    public SendMessage sendStatsMessage(long chatId, long userId) {
+    public SendMessage getStatsMessage(long chatId, long userId) {
         int numOfTries = scoreDAO.findScoresByUserId(userId).size();
         int numOfWins = scoreDAO.getNumberOfWins(userId);
         long totalMoney = scoreDAO.getTotalMoney(userId);
         double winPercentage = numOfWins / (double)numOfTries * 100;
 
-        String text = "Статистика @" + userDAO.findUserById(userId).getUsername() + ":"
+        User user = userDAO.findUserById(userId);
+        String text = user.getName() + " (@" + user.getUsername() + "):"
             + "\n\n\uD83D\uDCC8<b> Всего игр:</b> " + numOfTries // graph emoji
             + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>" + // trophy emoji
             "\n\n\uD83D\uDCB8<b> Выиграно</b>: " + totalMoney + "р."; // money stack with wings emoji
@@ -221,7 +205,8 @@ public class EventHandler {
     }
 
     ////////////* UTILITY *////////////
-    public void editMessageText(long chatId, String text) throws TelegramApiException {
+
+    private void editMessageText(long chatId, String text) throws TelegramApiException {
         EditMessageText editText = new EditMessageText();
         editText.setChatId(String.valueOf(chatId));
         editText.setMessageId(ActiveMessageCache.getMessageId());
@@ -229,7 +214,7 @@ public class EventHandler {
         sender.edit(editText, null);
     }
 
-    public void editInlineMarkup(long chatId, InlineKeyboardMarkup keyboard) throws TelegramApiException {
+    private void editInlineMarkup(long chatId, InlineKeyboardMarkup keyboard) throws TelegramApiException {
         EditMessageReplyMarkup editKeyboard = new EditMessageReplyMarkup();
         editKeyboard.setChatId(String.valueOf(chatId));
         editKeyboard.setMessageId(ActiveMessageCache.getMessageId());

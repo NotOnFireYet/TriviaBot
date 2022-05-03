@@ -19,7 +19,7 @@ public class HintContainer {
         return hintTextMap.get(hint);
     }
 
-    public static Hint getHintByText(String text){
+    public static Hint getHintByText(String text){ // get hint object from button text
         for (Map.Entry<Hint, String> entry : hintTextMap.entrySet()) {
             if (entry.getValue().equals(text)) {
                 return entry.getKey();

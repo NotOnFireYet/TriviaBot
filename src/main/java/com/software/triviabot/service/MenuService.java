@@ -30,8 +30,8 @@ public class MenuService { // Constructs button layouts
     private final UserDAO userDAO;
     private final QuestionDAO questionDAO;
 
-    /* BUILD BASE KEYBOARDS */
-    public ReplyKeyboardMarkup getMainKeyboard(){
+    //////////* START KEYBOARDS *//////////
+    public ReplyKeyboardMarkup getMainMenu(){
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
@@ -53,26 +53,12 @@ public class MenuService { // Constructs button layouts
         return replyKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup getStartKeyboard(){
-        return getOneButtonBaseKeyboard("Начать викторину");
+    public ReplyKeyboardMarkup getStartMenu(){
+        return getOneButtonMenu("Начать викторину");
     }
 
-    private ReplyKeyboardMarkup getOneButtonBaseKeyboard(String text){
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-        replyKeyboardMarkup.setSelective(true);
-        replyKeyboardMarkup.setResizeKeyboard(true);
-
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton(text));
-        keyboard.add(row1);
-
-        replyKeyboardMarkup.setKeyboard(keyboard);
-        return replyKeyboardMarkup;
-    }
-
-    /* HINTS */
-    public ReplyKeyboardMarkup getHintKeyboard() {
+    //////////* HINT KEYBOARDS *//////////
+    public ReplyKeyboardMarkup getHintMenu() {
         ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
         replyKeyboardMarkup.setSelective(true);
         replyKeyboardMarkup.setResizeKeyboard(true);
@@ -104,7 +90,13 @@ public class MenuService { // Constructs button layouts
         return getQuestionKeyboard(answers);
     }
 
-    /* BUILD INLINE KEYBOARDS */
+
+    public InlineKeyboardMarkup getHintOkKeyboard(Hint hint){
+        return getOneButtonInlineKeyboard("Понятно", hint.name() + "_Ok");
+    }
+
+
+    //////////* QUESTION KEYBOARDS *//////////
     public InlineKeyboardMarkup getQuestionKeyboard(List<Answer> answers) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
@@ -130,10 +122,11 @@ public class MenuService { // Constructs button layouts
     }
 
     public InlineKeyboardMarkup getNextQuestionKeyboard() {
-        return getSingleButtonInlineKeyboard("Следующий вопрос", "nextQuestionCallback");
+        return getOneButtonInlineKeyboard("Следующий вопрос", "nextQuestionCallback");
     }
 
-    private InlineKeyboardMarkup getSingleButtonInlineKeyboard(String text, String callbackValue){
+    //////////* UTILITY *//////////
+    private InlineKeyboardMarkup getOneButtonInlineKeyboard(String text, String callbackValue){
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
         InlineKeyboardButton button = new InlineKeyboardButton();
@@ -147,5 +140,19 @@ public class MenuService { // Constructs button layouts
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
+    }
+
+    private ReplyKeyboardMarkup getOneButtonMenu(String text){
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+        replyKeyboardMarkup.setSelective(true);
+        replyKeyboardMarkup.setResizeKeyboard(true);
+
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(new KeyboardButton(text));
+        keyboard.add(row1);
+
+        replyKeyboardMarkup.setKeyboard(keyboard);
+        return replyKeyboardMarkup;
     }
 }

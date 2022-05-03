@@ -13,4 +13,7 @@ public enum BotState {
     SCORE, // displaying the score
     REMINDRULES, // resending the rules message
     GETSTATS, // display statistics
+    DELETEDATA, // delete user data
+
+    IGNORE // ignore non-command user input
 }

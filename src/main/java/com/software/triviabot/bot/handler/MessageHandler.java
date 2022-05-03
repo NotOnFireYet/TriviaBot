@@ -5,8 +5,6 @@ import com.software.triviabot.bot.enums.BotState;
 import com.software.triviabot.bot.enums.Hint;
 import com.software.triviabot.cache.ActiveMessageCache;
 import com.software.triviabot.cache.BotStateCache;
-import com.software.triviabot.cache.HintCache;
-import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.service.DAO.UserDAO;
 import lombok.RequiredArgsConstructor;
@@ -45,34 +43,35 @@ public class MessageHandler {
 
             case ENTERNAME:
                 sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
+                BotStateCache.saveBotState(userId, BotState.IGNORE);
                 break;
 
             case GAMESTART:
-                HintCache.setUpHints(userId);
+                sender.send(eventHandler.getKeyboardSwitchMessage(chatId));
                 eventHandler.sendNextQuestion(chatId, userId);
                 BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 break;
 
-            case SENDQUESTION:
-                eventHandler.editMessageText(chatId, "This code is evidence of my mental decline");
-                QuestionCache.decreaseQuestionId(userId);
-                eventHandler.sendNextQuestion(chatId, userId);
+            case SENDQUESTION: // if user sends typed message during active quiz game
+                eventHandler.deleteUserMessage(chatId, message.getMessageId());
                 break;
 
             case GIVEHINT:
+                eventHandler.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
                 Hint hint = HintContainer.getHintByText(message.getText());
                 eventHandler.processHintRequest(chatId, userId, hint);
                 break;
 
             case REMINDRULES:
                 BotStateCache.saveBotState(userId, BotState.SCORE);
-                sender.send(eventHandler.getRulesMessage(chatId));
-                break;
+                return eventHandler.getRulesMessage(chatId);
 
             case GETSTATS:
                 BotStateCache.saveBotState(userId, BotState.SCORE);
-                sender.send(eventHandler.sendStatsMessage(chatId, userId));
-                break;
+                return eventHandler.getStatsMessage(chatId, userId);
+
+            case IGNORE:
+                return null;
 
             default:
                 throw new IllegalStateException("Unknown bot state: " + botState);
