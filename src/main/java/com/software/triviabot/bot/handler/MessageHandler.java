@@ -1,12 +1,14 @@
 package com.software.triviabot.bot.handler;
 
+import com.software.triviabot.bot.Bot;
 import com.software.triviabot.bot.ReplySender;
-import com.software.triviabot.bot.enums.BotState;
-import com.software.triviabot.bot.enums.Hint;
+import com.software.triviabot.enums.BotState;
+import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.ActiveMessageCache;
 import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.service.DAO.UserDAO;
+import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ public class MessageHandler {
     private final UserDAO userDAO;
     private final EventHandler eventHandler;
     private final ReplySender sender;
+    private final MessageService msgService;
 
     public BotApiMethod<?> handle(Message message, BotState botState) throws TelegramApiException {
         long userId = message.getFrom().getId();
@@ -37,29 +40,33 @@ public class MessageHandler {
                 if (!userDAO.exists(userId))
                     eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
                 BotStateCache.saveBotState(userId, BotState.ENTERNAME);
-                response = sender.send(eventHandler.getStartMessage(chatId)); // sends the greeting
-                ActiveMessageCache.setMessage(response); // sets the greeting as the message it's gonna be editing
-                break;
+                return eventHandler.getStartMessage(chatId); // sends the greeting
 
             case ENTERNAME:
-                sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
+                if (message.getText().isEmpty()){
+                    eventHandler.getInvalidNameMessage(chatId);
+                    break;
+                }
                 BotStateCache.saveBotState(userId, BotState.IGNORE);
+                sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
+                sender.send(eventHandler.getRulesMessage(chatId));
+
+                response = sender.send(eventHandler.getChooseTopicMessage(chatId));
+                ActiveMessageCache.setMessage(response);
                 break;
 
             case GAMESTART:
-                sender.send(eventHandler.getKeyboardSwitchMessage(chatId));
-                eventHandler.sendNextQuestion(chatId, userId);
-                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
-                break;
+                BotStateCache.saveBotState(userId, BotState.IGNORE); // ignore user's messages while topic menu is displayed
+                return eventHandler.getChooseTopicMessage(chatId);
 
             case SENDQUESTION: // if user sends typed message during active quiz game
-                eventHandler.deleteUserMessage(chatId, message.getMessageId());
+                msgService.deleteUserMessage(chatId, message.getMessageId()); //todo: put stop_game button here
                 break;
 
             case GIVEHINT:
-                eventHandler.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
                 Hint hint = HintContainer.getHintByText(message.getText());
                 eventHandler.processHintRequest(chatId, userId, hint);
+                msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
                 break;
 
             case REMINDRULES:

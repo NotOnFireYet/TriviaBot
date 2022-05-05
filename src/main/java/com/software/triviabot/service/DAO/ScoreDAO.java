@@ -36,10 +36,7 @@ public class ScoreDAO {
 
     public Boolean exists(int scoreId){
         log.info("Checking if score {} exists", scoreId);
-        List<?> resultSet = entityManager.createQuery(
-            "SELECT s FROM Score s WHERE score_id=" + scoreId)
-            .getResultList();
-        return resultSet.isEmpty() ? false : true;
+        return scoreRepo.existsById(scoreId);
     }
 
     public void saveScore(Score score){

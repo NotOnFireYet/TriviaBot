@@ -30,10 +30,7 @@ public class UserDAO {
 
     public Boolean exists(long userId){
         log.info("Checking if user {} exists", userId);
-        List<?> resultSet = entityManager.createQuery(
-            "SELECT u FROM User u WHERE user_id=" + userId)
-            .getResultList();
-        return resultSet.isEmpty() ? false : true;
+        return userRepo.existsById(userId);
     }
 
     public void saveScoreToUser(long userId, Score score){
@@ -43,6 +40,12 @@ public class UserDAO {
         newScores.add(score);
         user.setScores(newScores);
         userRepo.save(user);
+    }
+
+    public User getRandomUser(){
+        List<User> list = entityManager.createQuery(
+            "SELECT u FROM User u ORDER BY RAND()").getResultList();
+        return list.get(0);
     }
 
     public void saveNameToUser(long userId, String name){

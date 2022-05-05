@@ -1,7 +1,6 @@
 package com.software.triviabot.container;
 
 import com.google.common.collect.ImmutableMap;
-import com.software.triviabot.bot.enums.Hint;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

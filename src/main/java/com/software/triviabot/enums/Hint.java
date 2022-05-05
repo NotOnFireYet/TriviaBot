@@ -1,4 +1,4 @@
-package com.software.triviabot.bot.enums;
+package com.software.triviabot.enums;
 
 public enum Hint {
     FIFTY_FIFTY,

@@ -1,6 +1,5 @@
 package com.software.triviabot.bot;
 
-import org.hibernate.sql.Delete;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;

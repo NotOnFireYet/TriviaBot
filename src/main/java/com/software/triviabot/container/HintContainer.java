@@ -1,6 +1,6 @@
 package com.software.triviabot.container;
 
-import com.software.triviabot.bot.enums.Hint;
+import com.software.triviabot.enums.Hint;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

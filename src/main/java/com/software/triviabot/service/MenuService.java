@@ -1,11 +1,13 @@
 package com.software.triviabot.service;
 
-import com.software.triviabot.bot.enums.Hint;
+import com.software.triviabot.data.Topic;
+import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.data.Answer;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.service.DAO.QuestionDAO;
+import com.software.triviabot.service.DAO.TopicDAO;
 import com.software.triviabot.service.DAO.UserDAO;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ import java.util.List;
 public class MenuService { // Constructs button layouts
     private final UserDAO userDAO;
     private final QuestionDAO questionDAO;
+    private final TopicDAO topicDAO;
 
     //////////* START KEYBOARDS *//////////
     public ReplyKeyboardMarkup getMainMenu(){
@@ -53,9 +56,22 @@ public class MenuService { // Constructs button layouts
         return replyKeyboardMarkup;
     }
 
-    public ReplyKeyboardMarkup getStartMenu(){
-        return getOneButtonMenu("Начать викторину");
+    public InlineKeyboardMarkup getTopicsMenu(){
+        InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        for (Topic topic : topicDAO.findAllTopics()){
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(topic.getTitle());
+            button.setCallbackData(topic.getTopicId() + "TopicCallback");
+            log.info("Set button for topic with id {}", topic.getTopicId());
+            List<InlineKeyboardButton> row = new ArrayList<>();
+            row.add(button);
+            rowList.add(row);
+        }
+        inlineMarkup.setKeyboard(rowList);
+        return inlineMarkup;
     }
+
 
     //////////* HINT KEYBOARDS *//////////
     public ReplyKeyboardMarkup getHintMenu() {
@@ -79,7 +95,7 @@ public class MenuService { // Constructs button layouts
 
     // leaves one correct and one wrong answer
     public InlineKeyboardMarkup getFiftyFiftyKeyboard(long userId) {
-        Question question = questionDAO.findQuestionById(QuestionCache.getCurrentQuestionId(userId));
+        Question question = questionDAO.findQuestionById(QuestionCache.getCurrentQuestionNum(userId));
         List<Answer> answers = question.getAnswers();
         int i = 0;
         while (answers.size() > 2) {
@@ -99,24 +115,18 @@ public class MenuService { // Constructs button layouts
     //////////* QUESTION KEYBOARDS *//////////
     public InlineKeyboardMarkup getQuestionKeyboard(List<Answer> answers) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
         String isCorrect;
-
-        // Compiles list of rows with buttons
-        for (Answer answer : answers) {
+        for (Answer answer : answers) { // Compiles list of rows with buttons
             InlineKeyboardButton button = new InlineKeyboardButton();
             button.setText(answer.getText());
-
-            // builds different callbacks for right and wrong answers
-            isCorrect = answer.getIsCorrect() ? "Correct" : "Wrong";
+            isCorrect = answer.getIsCorrect() ? "Correct" : "Wrong"; // builds callbacks for right and wrong answers
             button.setCallbackData("answerCallback" + isCorrect);
 
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
             rowList.add(row);
         }
-
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
     }

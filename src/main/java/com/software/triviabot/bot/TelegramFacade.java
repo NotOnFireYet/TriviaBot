@@ -1,7 +1,7 @@
 package com.software.triviabot.bot;
 
-import com.software.triviabot.bot.enums.BotState;
-import com.software.triviabot.bot.enums.Hint;
+import com.software.triviabot.enums.BotState;
+import com.software.triviabot.enums.Hint;
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
 import com.software.triviabot.bot.handler.MessageHandler;
 import com.software.triviabot.cache.BotStateCache;
@@ -43,13 +43,11 @@ public class TelegramFacade {
         long userId = message.getFrom().getId();
         String inputText = message.getText();
 
-        switch (inputText) {
+        switch (inputText) { // TODO: кнопка прервать викторину
             case "/start":
                 botState = BotState.START;
                 break;
             case "Начать викторину":
-                QuestionCache.deleteQuestionCache(userId);
-                HintCache.setUpHints(userId);
                 botState = BotState.GAMESTART;
                 break;
             case "Напомнить правила":

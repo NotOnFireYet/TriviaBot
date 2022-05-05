@@ -1,10 +1,10 @@
-package com.software.triviabot.bot.enums;
+package com.software.triviabot.enums;
 
 
 public enum BotState {
     START, // start of the session
     ENTERNAME, // accepting name input
-    GAMESTART, // beginning of the game before 1st question is sent
+    GAMESTART, // picking the topic
 
     SENDQUESTION, // game in process
     GETANSWER, // user answers a question
