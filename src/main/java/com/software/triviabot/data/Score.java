@@ -20,7 +20,7 @@ public class Score {
     private int scoreId;
 
     @ManyToOne
-    @JoinColumn(name="user_id", nullable=false)
+    @JoinColumn(name="user_id")
     private User user;
 
     private int answeredQuestions;

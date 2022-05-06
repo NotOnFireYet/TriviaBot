@@ -63,7 +63,6 @@ public class MenuService { // Constructs button layouts
             InlineKeyboardButton button = new InlineKeyboardButton();
             button.setText(topic.getTitle());
             button.setCallbackData(topic.getTopicId() + "TopicCallback");
-            log.info("Set button for topic with id {}", topic.getTopicId());
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
             rowList.add(row);
@@ -94,9 +93,7 @@ public class MenuService { // Constructs button layouts
     }
 
     // leaves one correct and one wrong answer
-    public InlineKeyboardMarkup getFiftyFiftyKeyboard(long userId) {
-        Question question = questionDAO.findQuestionById(QuestionCache.getCurrentQuestionNum(userId));
-        List<Answer> answers = question.getAnswers();
+    public InlineKeyboardMarkup getFiftyFiftyKeyboard(long userId, List<Answer> answers) {
         int i = 0;
         while (answers.size() > 2) {
             if (!answers.get(i).getIsCorrect())

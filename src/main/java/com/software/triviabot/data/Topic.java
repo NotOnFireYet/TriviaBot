@@ -24,4 +24,8 @@ public class Topic {
     @OneToMany(mappedBy="topic", cascade = CascadeType.ALL,
         fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Question> questions;
+
+    public Question getQuestionByNumber(int num){
+        return questions.get(num - 1);
+    }
 }

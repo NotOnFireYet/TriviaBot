@@ -30,14 +30,13 @@ public class Question {
     @JoinColumn(name="topic_id")
     private Topic topic;
 
-    @NotNull
-    @Column(unique=true)
+    @Column(unique=true, nullable = false)
     private String text;
 
     private String correctAnswerReaction;
 
     @Column(unique=true)
     @OneToMany(mappedBy="question", cascade = CascadeType.ALL,
-        fetch = FetchType.LAZY, orphanRemoval = true)
+        fetch = FetchType.EAGER, orphanRemoval = true)
     private List<Answer> answers;
 }

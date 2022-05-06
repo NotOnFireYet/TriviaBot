@@ -30,7 +30,7 @@ public class HintCache { // map of users with all of their remaining hint option
     }
 
     public static void decreaseHint(long userId, Hint hintName){
-        int prevHintNumber = hintCacheMap.get(userId).get(hintName); // todo: throw exception on negative hints
+        int prevHintNumber = hintCacheMap.get(userId).get(hintName); // todo: action on negative hints
         hintCacheMap.get(userId).put(hintName, prevHintNumber - 1);
     }
 

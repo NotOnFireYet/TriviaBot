@@ -27,11 +27,11 @@ public class PriceContainer {
         .put(15, 1000000)
         .build();
 
-    public static Integer getPriceByQuestionId(int questionId){
-        return questionPriceMap.get(questionId);
+    public static Integer getPriceByQuestionNum(int questionNum){
+        return questionPriceMap.get(questionNum);
     }
 
-    public static Integer getQuestionIdByPrice(int price){
+    public static Integer getQuestionNumByPrice(int price){
         for (Map.Entry<Integer, Integer> entry : questionPriceMap.entrySet()) {
             if (entry.getValue().equals(price)) {
                 return entry.getKey();

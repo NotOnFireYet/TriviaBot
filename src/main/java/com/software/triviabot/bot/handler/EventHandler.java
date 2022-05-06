@@ -1,7 +1,6 @@
 package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ReplySender;
-import com.software.triviabot.data.Topic;
 import com.software.triviabot.enums.BotState;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.ActiveMessageCache;
@@ -58,7 +57,7 @@ public class EventHandler {
     }
 
     public SendMessage getRulesMessage(long chatId){
-        String rules = "Тебе предстоит 15 вопросов. " +
+        String rules = "Тебе предстоит " + " вопросов. " +
             "\nКаждый верный ответ увеличивает твой выигрыш, каждый неверный - " +
             "заканчивает игру.\nНо не все так просто!" +
             "\nТебе доступны подсказки:\n\n" +
@@ -94,21 +93,38 @@ public class EventHandler {
 
 
     ////////////* QUIZ GAME EVENTS *////////////
+
+    // updates question message according to QuestionCache
+    public void updateQuestion(long chatId, long userId) throws TelegramApiException {
+        QuestionCache.incrementQuestionNum(userId);
+        Question question = QuestionCache.getCurrentQuestion(userId);
+        String text = "\uD83D\uDD39 " + question.getText(); // blue diamond emoji
+        InlineKeyboardMarkup keyboard = menuService.getQuestionKeyboard(question.getAnswers());
+        int questionNum = QuestionCache.getCurrentQuestionNum(userId);
+
+        // if first question to be sent, send as separate message
+        if (questionNum == 1) {
+            SendMessage message = msgService.buildMessage(chatId, text);
+            message.setReplyMarkup(keyboard);
+            ActiveMessageCache.setMessage(sender.send(message)); // set the question message to be refreshed later
+        } else {
+            msgService.editMessageText(chatId, text);
+            msgService.editInlineMarkup(chatId, keyboard);
+        }
+    }
+
     public void processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
         if (isCorrect) {
-            Topic topic = topicDAO.findAllTopics().get(QuestionCache.getCurrentTopicId(userId) - 1); //todo: save topic objects in map instead of id
-            Question question = topic.getQuestions().get(QuestionCache.getCurrentQuestionNum(userId) - 1);
-
-            int questionId = question.getQuestionId();
-            String text = questionDAO.findQuestionById(questionId).getCorrectAnswerReaction();
+            Question question = QuestionCache.getCurrentQuestion(userId);
+            String text = question.getCorrectAnswerReaction();
 
             // see if this was the last question
-            if (!questionDAO.exists(QuestionCache.getNextQuestionNum(userId))) {
+            if (QuestionCache.isLastQuestion(userId)) {
                 msgService.editMessageText(chatId, text);
                 processScoreEvent(chatId, userId, true);
                 return;
             }
-            text += "\n" + PriceContainer.getPriceByQuestionId(questionId) + " рублей твои!";
+            text += "\n" + PriceContainer.getPriceByQuestionNum(question.getNumberInTopic()) + " рублей твои!"; // todo: fix the pricing
             msgService.editMessageText(chatId, text);
             msgService.editInlineMarkup(chatId, menuService.getNextQuestionKeyboard());
         } else
@@ -127,42 +143,19 @@ public class EventHandler {
     // pull user out of db
     // get their scores
     // in first score get their answer to question
-    public void processCallFriendRequest(long chatId, long userId, int questionId) {
+    public void processCallFriendRequest(long chatId, long userId, Question question) {
         User user = userDAO.getRandomUser();
         log.info("Call Friend invoked.");
     }
 
-    public void processAudienceHelpRequest(long chatId, long userId, int questionId) {
+    public void processAudienceHelpRequest(long chatId, long userId, Question question) {
         log.info("Audience Help invoked.");
     }
 
-    public void processFiftyFiftyRequest(long chatId, long userId, int questionId) throws TelegramApiException {
-        String text = "\uD83D\uDD39 " + questionDAO.findQuestionById(questionId).getText();
+    public void processFiftyFiftyRequest(long chatId, long userId, Question question) throws TelegramApiException {
+        String text = "\uD83D\uDD39 " + question.getText();
         msgService.editMessageText(chatId, text);
-        msgService.editInlineMarkup(chatId, menuService.getFiftyFiftyKeyboard(userId));
-    }
-
-    // updates question message according to QuestionCache
-    public void updateQuestion(long chatId, long userId) throws TelegramApiException {
-        QuestionCache.incrementQuestionNum(userId);
-        int topicId = QuestionCache.getCurrentTopicId(userId);
-        Topic topic = topicDAO.findTopicById(topicId);
-        if (topic != null) {
-            int questionNum = QuestionCache.getCurrentQuestionNum(userId);
-            Question question = topic.getQuestions().get(questionNum - 1);
-            String text = "\uD83D\uDD39 " + question.getText(); // blue diamond emoji
-            InlineKeyboardMarkup keyboard = menuService.getQuestionKeyboard(question.getAnswers());
-
-            if (questionNum == 1) { // if first question to be sent, send as separate message
-                SendMessage message = msgService.buildMessage(chatId, text);
-                message.setReplyMarkup(keyboard);
-                ActiveMessageCache.setMessage(sender.send(message)); // set the question message to be refreshed later
-            } else {
-                msgService.editMessageText(chatId, text);
-                msgService.editInlineMarkup(chatId, keyboard);
-            }
-        } else
-            throw new NullPointerException("Failed to fetch topic with id" + topicId);
+        msgService.editInlineMarkup(chatId, menuService.getFiftyFiftyKeyboard(userId, question.getAnswers()));
     }
 
 
@@ -173,31 +166,39 @@ public class EventHandler {
         Score score = new Score();
         score.setUser(userDAO.findUserById(userId));
         score.setSuccessful(isSuccessful);
+        int questionNum = QuestionCache.getCurrentQuestionNum(userId);
+        score.setAnsweredQuestions(questionNum);
 
-        int questionId = QuestionCache.getCurrentQuestionNum(userId);
-        score.setAnsweredQuestions(questionId);
-        score.setGainedMoney(PriceContainer.getPriceByQuestionId(questionId));
-
+        int questionPrice = 0;
+        if (questionNum > 1) // if user came further than the 1st question
+            questionPrice = isSuccessful ? PriceContainer.getPriceByQuestionNum(questionNum) :
+                PriceContainer.getPriceByQuestionNum(questionNum - 1);
+        score.setGainedMoney(questionPrice);
         scoreDAO.saveScore(score);
         userDAO.saveScoreToUser(userId, score);
 
-        getScoreMessage(chatId, userId, isSuccessful);
-
-        SendMessage tryAgainMessage = msgService.buildMessage(chatId, "Ты можешь посмотреть свою статистику или попробовать еще раз.");
+        SendMessage tryAgainMessage = msgService.buildMessage(chatId, "Итоговый выигрыш: " +
+            questionPrice +" рублей. \nТы можешь посмотреть свою статистику или попробовать еще раз.");
         tryAgainMessage.setReplyMarkup(menuService.getMainMenu());
+
+        sendScoreMessage(chatId, questionPrice, isSuccessful);
         sender.send(tryAgainMessage);
     }
 
-    private void getScoreMessage(long chatId, long userId, boolean isSuccessful) throws TelegramApiException {
-        int lostMoney = 1000000 - PriceContainer.getPriceByQuestionId(QuestionCache.getCurrentQuestionNum(userId));
-        String text = isSuccessful ? "Вопросы закончены! Миллион рублей твои!" :
-            "Увы, ответ неправильный! " +
-                lostMoney + FailMessageContainer.getRandomFailMessage();
-        msgService.editMessageText(chatId, text);
+    private void sendScoreMessage(long chatId, int wonMoney, boolean isSuccessful) throws TelegramApiException {
+        String text;
+        if (isSuccessful){
+            text = "Вопросы закончены! Миллион рублей твои!";
+            sender.send(msgService.buildMessage(chatId, text));
+        } else {
+            int lostMoney = 1000000 - wonMoney;
+            text = "Увы, ответ неправильный! " + lostMoney + FailMessageContainer.getRandomFailMessage();
+            msgService.editMessageText(chatId, text);
+        }
     }
 
 
-    ////////////* MAINMENU *////////////
+    ////////////* MAIN MENU *////////////
     public SendMessage getStatsMessage(long chatId, long userId) {
         int numOfTries = scoreDAO.findScoresByUserId(userId).size();
         int numOfWins = scoreDAO.getNumberOfWins(userId);
@@ -205,7 +206,7 @@ public class EventHandler {
         double winPercentage = numOfWins / (double)numOfTries * 100;
 
         User user = userDAO.findUserById(userId);
-        String text = user.getName() + " (@" + user.getUsername() + "):"
+        String text = user.getName() + " | @" + user.getUsername()
             + "\n\n\uD83D\uDCC8<b> Всего игр:</b> " + numOfTries // graph emoji
             + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>" + // trophy emoji
             "\n\n\uD83D\uDCB8<b> Выиграно</b>: " + totalMoney + "р."; // money stack with wings emoji

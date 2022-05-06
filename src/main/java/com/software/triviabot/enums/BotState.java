@@ -7,7 +7,6 @@ public enum BotState {
     GAMESTART, // picking the topic
 
     SENDQUESTION, // game in process
-    GETANSWER, // user answers a question
     GIVEHINT, // accepting hint request
 
     SCORE, // displaying the score

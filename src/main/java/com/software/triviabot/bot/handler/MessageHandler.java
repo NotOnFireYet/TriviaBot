@@ -64,9 +64,10 @@ public class MessageHandler {
                 break;
 
             case GIVEHINT:
+                msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
                 Hint hint = HintContainer.getHintByText(message.getText());
                 eventHandler.processHintRequest(chatId, userId, hint);
-                msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 break;
 
             case REMINDRULES:

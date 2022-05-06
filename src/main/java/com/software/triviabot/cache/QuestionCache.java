@@ -1,5 +1,7 @@
 package com.software.triviabot.cache;
 
+import com.software.triviabot.data.Question;
+import com.software.triviabot.data.Topic;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -13,17 +15,22 @@ import java.util.Map;
 @Service
 public class QuestionCache {
     private static Map<Long, Integer> currentQuestionMap = new HashMap<>();
-    private static Map<Long, Integer> currentTopicMap = new HashMap<>();
+    private static Map<Long, Topic> currentTopicMap = new HashMap<>();
 
     private QuestionCache(){}
 
-    public static void setTopic(long userId, int topicId){
+    public static void setupQuestionCache(long userId, Topic topic){
         currentQuestionMap.put(userId, 0);
-        currentTopicMap.put(userId, topicId);
-        log.info("Current topic for user {}: {}", userId, topicId);
+        currentTopicMap.put(userId, topic);
+        log.info("Current topic for user {}: {}", userId, topic.getTopicId());
     }
 
-    public static int getCurrentTopicId(long userId){
+    public static Question getCurrentQuestion(long userId){
+        Topic topic = currentTopicMap.get(userId);
+        return topic.getQuestionByNumber(currentQuestionMap.get(userId));
+    }
+
+    public static Topic getCurrentTopic(long userId){
         return currentTopicMap.get(userId);
     }
 
@@ -42,13 +49,14 @@ public class QuestionCache {
         return currentQuestionMap.get(userId);
     }
 
-
-    public static int getNextQuestionNum(Long userId){
-        return currentQuestionMap.get(userId) + 1;
+    public static boolean isLastQuestion(Long userId){
+        Topic topic = currentTopicMap.get(userId);
+        return topic.getQuestions().size() == getCurrentQuestionNum(userId);
     }
 
     // deletes the record for user after a game is complete
     public static void deleteQuestionCache(Long userId) {
+        log.info("Clearing question cache for user {}", userId);
         if (currentQuestionMap.containsKey(userId)) {
             currentQuestionMap.remove(userId);
         }
