@@ -8,6 +8,8 @@ public enum BotState {
 
     SENDQUESTION, // game in process
     GIVEHINT, // accepting hint request
+    SENDQUESTION_AFTER_HINT, // resending question after a hint was shown
+    DOUBLE_HINT_REQUEST,
 
     SCORE, // displaying the score
     REMINDRULES, // resending the rules message

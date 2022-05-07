@@ -1,6 +1,7 @@
 package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ReplySender;
+import com.software.triviabot.data.Answer;
 import com.software.triviabot.enums.BotState;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.ActiveMessageCache;
@@ -23,18 +24,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Service
 public class EventHandler {
     private final UserDAO userDAO;
-    private final QuestionDAO questionDAO;
     private final ScoreDAO scoreDAO;
-    private final TopicDAO topicDAO;
 
     private final MenuService menuService;
     private final ReplySender sender;
@@ -50,7 +52,7 @@ public class EventHandler {
         return msgService.buildMessage(chatId, "Имя должно содержать текст!");
     }
 
-    public SendMessage getChooseTopicMessage(long chatId) {
+    public SendMessage getChooseTopicMessage(long chatId) { // todo: delete on game start
         SendMessage message = msgService.buildMessage(chatId, "Выбери тему, чтобы начать викторину.");
         message.setReplyMarkup(menuService.getTopicsMenu());
         return message;
@@ -68,13 +70,6 @@ public class EventHandler {
             "Каждую подсказку можно использовать 2 раза за игру.\n" +
             "Желаем удачи!";
         return msgService.buildMessage(chatId, rules);
-    }
-
-    public void saveNewUser(String username, long userId) { // todo: refactor whatever the fuck this is
-        User user = new User();
-        user.setUserId(userId);
-        user.setUsername(username);
-        userDAO.saveUser(user);
     }
 
     public SendMessage getStartMessage(long chatId) {
@@ -124,7 +119,7 @@ public class EventHandler {
                 processScoreEvent(chatId, userId, true);
                 return;
             }
-            text += "\n" + PriceContainer.getPriceByQuestionNum(question.getNumberInTopic()) + " рублей твои!"; // todo: fix the pricing
+            text += "\n" + PriceContainer.getPriceByQuestionNum(question.getNumberInTopic()) + " рублей твои!";
             msgService.editMessageText(chatId, text);
             msgService.editInlineMarkup(chatId, menuService.getNextQuestionKeyboard());
         } else
@@ -137,19 +132,34 @@ public class EventHandler {
         String text = "Ты выбрал подсказку \"" + HintContainer.getHintText(hint) + "\"." +
             "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint);
         msgService.editMessageText(chatId, text);
-        msgService.editInlineMarkup(chatId, menuService.getHintOkKeyboard(hint));
+        msgService.editInlineMarkup(chatId, menuService.getHintOkKeyboard(hint)); // todo: fixing user spam during hints.
     }
 
-    // pull user out of db
-    // get their scores
-    // in first score get their answer to question
+    public void handleNoMoreHints(long chatId) throws TelegramApiException {
+        msgService.editMessageText(chatId, "Это подсказка закончилась :(");
+        msgService.editInlineMarkup(chatId, menuService.getNoHintsOkKeyboard());
+    }
+
+    public void handleDoubleHintRequest(long chatId) throws TelegramApiException {
+        msgService.editMessageText(chatId, "Ты уже использовал подсказку на этом вопросе.");
+        msgService.editInlineMarkup(chatId, menuService.getDoubleHintOkKeyboard());
+    }
+
     public void processCallFriendRequest(long chatId, long userId, Question question) {
         User user = userDAO.getRandomUser();
         log.info("Call Friend invoked.");
     }
 
-    public void processAudienceHelpRequest(long chatId, long userId, Question question) {
-        log.info("Audience Help invoked.");
+    public void processAudienceHelpRequest(long chatId, long userId, Question question) throws TelegramApiException {
+        List<Answer> answers = question.getAnswers();
+        for (Answer answer : answers){ // edit answer texts to include percentages
+            String answerText = answer.getText();
+            answerText += " | " + answer.getPercentagePicked() + "%";
+            answer.setText(answerText);
+        }
+        String text = "\uD83D\uDD39 " + question.getText();
+        msgService.editMessageText(chatId, text);
+        msgService.editInlineMarkup(chatId, menuService.getQuestionKeyboard(answers));
     }
 
     public void processFiftyFiftyRequest(long chatId, long userId, Question question) throws TelegramApiException {
@@ -161,7 +171,7 @@ public class EventHandler {
 
     ////////////* GAME END EVENTS *////////////
     public void processScoreEvent(long chatId, long userId, boolean isSuccessful) throws TelegramApiException {
-        BotStateCache.saveBotState(userId, BotState.SCORE);
+        BotStateCache.saveBotState(userId, BotState.IGNORE);
 
         Score score = new Score();
         score.setUser(userDAO.findUserById(userId));
@@ -211,5 +221,9 @@ public class EventHandler {
             + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>" + // trophy emoji
             "\n\n\uD83D\uDCB8<b> Выиграно</b>: " + totalMoney + "р."; // money stack with wings emoji
         return msgService.buildMessage(chatId, text);
+    }
+
+    public SendMessage deleteUserData(long chatId, long userId) throws TelegramApiException {
+        return msgService.buildMessage(chatId, "Функция в разработке");
     }
 }

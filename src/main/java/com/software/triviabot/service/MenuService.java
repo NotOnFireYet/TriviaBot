@@ -103,6 +103,13 @@ public class MenuService { // Constructs button layouts
         return getQuestionKeyboard(answers);
     }
 
+    public InlineKeyboardMarkup getNoHintsOkKeyboard() {
+        return getOneButtonInlineKeyboard("Понятно", "NoHintsCallback");
+    }
+
+    public InlineKeyboardMarkup getDoubleHintOkKeyboard() {
+        return getOneButtonInlineKeyboard("Понятно", "DoubleHintOk");
+    }
 
     public InlineKeyboardMarkup getHintOkKeyboard(Hint hint){
         return getOneButtonInlineKeyboard("Понятно", hint.name() + "_Ok");

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 @Slf4j
 @Service
@@ -60,6 +61,7 @@ public class QuestionDAO {
         boolean hasRightAnswer = false; // to prevent saving multiple right answers
         for (String answerText : answerTexts){
             Answer answer = new Answer();
+            answer.setPercentagePicked(new Random().nextInt(100));
             answer.setText(answerText);
             answer.setQuestion(question);
             answer.setIsCorrect(answerText.equals(rightAnswerText));

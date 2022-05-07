@@ -1,5 +1,6 @@
 package com.software.triviabot.bot;
 
+import com.software.triviabot.bot.handler.EventHandler;
 import com.software.triviabot.enums.BotState;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.bot.handler.CallbackQueryHandler;
@@ -8,6 +9,7 @@ import com.software.triviabot.cache.BotStateCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.container.HintContainer;
+import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +24,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TelegramFacade {
+    private final EventHandler eventHandler;
     private final MessageHandler messageHandler;
+    private final MessageService msgService;
     private final CallbackQueryHandler callbackQueryHandler;
 
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
@@ -64,11 +68,16 @@ public class TelegramFacade {
                     BotState.START : BotStateCache.getCurrentState(userId);
         }
 
-        // reaction to hint buttons
+        // reaction to hint buttons (only when a game is in process)
         if (inputText.equals(HintContainer.getHintText(Hint.AUDIENCE_HELP)) ||
             inputText.equals(HintContainer.getHintText(Hint.CALL_FRIEND)) ||
             inputText.equals(HintContainer.getHintText(Hint.FIFTY_FIFTY))) {
-            botState = BotState.GIVEHINT;
+            if (BotStateCache.getCurrentState(userId) == BotState.SENDQUESTION) // hint request after question
+                botState = BotState.GIVEHINT;
+
+            if (BotStateCache.getCurrentState(userId) == BotState.GIVEHINT) { // if user spams during hint
+                botState = BotState.SENDQUESTION_AFTER_HINT;
+            }
         }
 
         return messageHandler.handle(message, botState);

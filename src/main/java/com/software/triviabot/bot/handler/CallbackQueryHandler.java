@@ -6,6 +6,7 @@ import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.data.Question;
 import com.software.triviabot.enums.BotState;
+import com.software.triviabot.enums.Hint;
 import com.software.triviabot.service.DAO.TopicDAO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ public class CallbackQueryHandler {
     private final TopicDAO topicDAO;
 
     public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) throws TelegramApiException {
-        long chatId = buttonQuery.getMessage().getChatId(); // todo: stopped at ending game with new topic doesn't work
+        long chatId = buttonQuery.getMessage().getChatId();
         long userId = buttonQuery.getFrom().getId();
         String data = buttonQuery.getData();
         log.info("Received callback query: {}", data);
@@ -44,28 +45,38 @@ public class CallbackQueryHandler {
         Question question = QuestionCache.getCurrentQuestion(userId);
         log.info("Topic {}, question {}", QuestionCache.getCurrentTopic(userId).getTopicId(), QuestionCache.getCurrentQuestion(userId).getNumberInTopic());
         switch (data) {
-            case ("answerCallbackCorrect"):
+            case "answerCallbackCorrect":
+                log.info("Answer given: {}", buttonQuery.getId());
                 eventHandler.processAnswer(chatId, userId, true);
                 break;
 
-            case ("answerCallbackWrong"):
+            case "answerCallbackWrong":
                 eventHandler.processAnswer(chatId, userId, false);
                 break;
 
-            case ("nextQuestionCallback"):
+            case "nextQuestionCallback":
                 BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
                 eventHandler.updateQuestion(chatId, userId);
                 break;
 
-            case ("FIFTY_FIFTY_Ok"):
+            case "DoubleHintOk": // todo: refactor callback names
+            case "NoHintsCallback":
+                QuestionCache.decreaseQuestionNum(userId);
+                eventHandler.updateQuestion(chatId, userId);
+                break;
+
+            case "FIFTY_FIFTY_Ok":
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION_AFTER_HINT);
                 eventHandler.processFiftyFiftyRequest(chatId, userId, question);
                 break;
 
-            case ("CALL_FRIEND_Ok"):
+            case "CALL_FRIEND_Ok":
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION_AFTER_HINT);
                 eventHandler.processCallFriendRequest(chatId, userId, question);
                 break;
 
-            case ("AUDIENCE_HELP_Ok"):
+            case "AUDIENCE_HELP_Ok":
+                BotStateCache.saveBotState(userId, BotState.SENDQUESTION_AFTER_HINT);
                 eventHandler.processAudienceHelpRequest(chatId, userId, question);
                 break;
         }

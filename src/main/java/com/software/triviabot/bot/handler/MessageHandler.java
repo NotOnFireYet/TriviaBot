@@ -2,6 +2,8 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.Bot;
 import com.software.triviabot.bot.ReplySender;
+import com.software.triviabot.cache.HintCache;
+import com.software.triviabot.data.User;
 import com.software.triviabot.enums.BotState;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.ActiveMessageCache;
@@ -37,8 +39,12 @@ public class MessageHandler {
         Message response;
         switch (botState) {
             case START:
-                if (!userDAO.exists(userId))
-                    eventHandler.saveNewUser(message.getFrom().getUserName(), userId);
+                if (!userDAO.exists(userId)){
+                    User user = new User();
+                    user.setUserId(userId);
+                    user.setUsername(message.getFrom().getUserName());
+                    userDAO.saveUser(user);
+                }
                 BotStateCache.saveBotState(userId, BotState.ENTERNAME);
                 return eventHandler.getStartMessage(chatId); // sends the greeting
 
@@ -59,24 +65,36 @@ public class MessageHandler {
                 BotStateCache.saveBotState(userId, BotState.IGNORE); // ignore user's messages while topic menu is displayed
                 return eventHandler.getChooseTopicMessage(chatId);
 
-            case SENDQUESTION: // if user sends typed message during active quiz game
-                msgService.deleteUserMessage(chatId, message.getMessageId()); //todo: put stop_game button here
+            case SENDQUESTION:
+                msgService.deleteUserMessage(chatId, message.getMessageId());
+                break;
+
+            case SENDQUESTION_AFTER_HINT:
+                msgService.deleteUserMessage(chatId, message.getMessageId());
+                eventHandler.handleDoubleHintRequest(message.getChatId());
                 break;
 
             case GIVEHINT:
                 msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
                 Hint hint = HintContainer.getHintByText(message.getText());
+                if (HintCache.getRemainingHints(userId, hint) < 1){ // if out of hints
+                    eventHandler.handleNoMoreHints(chatId);
+                    break;
+                }
                 eventHandler.processHintRequest(chatId, userId, hint);
-                BotStateCache.saveBotState(userId, BotState.SENDQUESTION);
+                BotStateCache.saveBotState(userId, BotState.IGNORE);
                 break;
 
             case REMINDRULES:
-                BotStateCache.saveBotState(userId, BotState.SCORE);
+                BotStateCache.saveBotState(userId, BotState.IGNORE);
                 return eventHandler.getRulesMessage(chatId);
 
             case GETSTATS:
-                BotStateCache.saveBotState(userId, BotState.SCORE);
+                BotStateCache.saveBotState(userId, BotState.IGNORE);
                 return eventHandler.getStatsMessage(chatId, userId);
+
+            case DELETEDATA:
+                return eventHandler.deleteUserData(chatId, userId);
 
             case IGNORE:
                 return null;

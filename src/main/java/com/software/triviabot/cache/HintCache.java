@@ -29,9 +29,11 @@ public class HintCache { // map of users with all of their remaining hint option
         return hintCacheMap.get(userId).get(hint);
     }
 
-    public static void decreaseHint(long userId, Hint hintName){
-        int prevHintNumber = hintCacheMap.get(userId).get(hintName); // todo: action on negative hints
-        hintCacheMap.get(userId).put(hintName, prevHintNumber - 1);
+    public static void decreaseHint(long userId, Hint hint){
+        if (getRemainingHints(userId, hint) < 1)
+            throw new IllegalArgumentException("Out of hints: " + hint.name());
+        int prevHintNumber = hintCacheMap.get(userId).get(hint);
+        hintCacheMap.get(userId).put(hint, prevHintNumber - 1);
     }
 
     public static void deleteHintCache(long userId){

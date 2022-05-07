@@ -28,6 +28,4 @@ public class Score {
     private boolean isSuccessful;
 
     private int gainedMoney;
-
-    private String subject; // for different question subjects; todo: implement subjects with diff classes
 }

@@ -26,4 +26,6 @@ public class Answer {
 
     @Column(name="is_correct", nullable=false)
     private Boolean isCorrect; // marks the correct answer
+
+    private int percentagePicked; // for "audience help" hint
 }

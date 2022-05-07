@@ -16,13 +16,12 @@ public class FailMessageContainer {
         " рублей распределены рабочему классу.☭",
         " рублей разлетелись по ветру.\uD83D\uDCA8", // wind gust emoji
         " рублей ушли разработчику этого бота.❤",
-        " рублей изъяты налоговой инспекцией.\uD83D\uDD8A" // pen emoji
+        " рублей изъяты налоговой инспекцией. ✍️"
     );
 
     public static String getRandomFailMessage(){
-        Random rnd = new Random();
         int max = messages.size();
         int min = 1;
-        return messages.get(rnd.nextInt(max - min) + min);
+        return messages.get(new Random().nextInt(max - min) + min);
     }
 }
