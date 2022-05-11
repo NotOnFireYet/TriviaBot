@@ -2,10 +2,8 @@ package com.software.triviabot.service;
 
 import com.software.triviabot.data.Topic;
 import com.software.triviabot.enums.Hint;
-import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.data.Answer;
-import com.software.triviabot.data.Question;
 import com.software.triviabot.service.DAO.QuestionDAO;
 import com.software.triviabot.service.DAO.TopicDAO;
 import com.software.triviabot.service.DAO.UserDAO;
@@ -84,7 +82,7 @@ public class MenuService { // Constructs button layouts
         // create and set text to all the hint buttons
         for (Hint hint : Hint.values()){
             KeyboardButton button = new KeyboardButton();
-            button.setText(HintContainer.getHintText(hint));
+            button.setText(HintContainer.getText(hint));
             row.add(button);
         }
         keyboard.add(row);
@@ -93,7 +91,7 @@ public class MenuService { // Constructs button layouts
     }
 
     // leaves one correct and one wrong answer
-    public InlineKeyboardMarkup getFiftyFiftyKeyboard(long userId, List<Answer> answers) {
+    public InlineKeyboardMarkup getFiftyFiftyKeyboard(List<Answer> answers) {
         int i = 0;
         while (answers.size() > 2) {
             if (!answers.get(i).getIsCorrect())
@@ -105,10 +103,6 @@ public class MenuService { // Constructs button layouts
 
     public InlineKeyboardMarkup getNoHintsOkKeyboard() {
         return getOneButtonInlineKeyboard("Понятно", "NoHintsCallback");
-    }
-
-    public InlineKeyboardMarkup getDoubleHintOkKeyboard() {
-        return getOneButtonInlineKeyboard("Понятно", "DoubleHintOk");
     }
 
     public InlineKeyboardMarkup getHintOkKeyboard(Hint hint){
@@ -154,19 +148,5 @@ public class MenuService { // Constructs button layouts
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
-    }
-
-    private ReplyKeyboardMarkup getOneButtonMenu(String text){
-        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-        replyKeyboardMarkup.setSelective(true);
-        replyKeyboardMarkup.setResizeKeyboard(true);
-
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(new KeyboardButton(text));
-        keyboard.add(row1);
-
-        replyKeyboardMarkup.setKeyboard(keyboard);
-        return replyKeyboardMarkup;
     }
 }

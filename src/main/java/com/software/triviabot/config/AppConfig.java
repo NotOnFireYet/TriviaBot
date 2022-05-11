@@ -1,7 +1,7 @@
 package com.software.triviabot.config;
 
 import com.software.triviabot.bot.Bot;
-import com.software.triviabot.bot.TelegramFacade;
+import com.software.triviabot.bot.handler.UpdateHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
@@ -20,8 +20,8 @@ public class AppConfig {
     }
 
     @Bean
-    public Bot springWebhookBot(SetWebhook setWebhook, TelegramFacade telegramFacade) {
-        Bot bot = new Bot(telegramFacade, setWebhook);
+    public Bot springWebhookBot(SetWebhook setWebhook, UpdateHandler updateHandler) {
+        Bot bot = new Bot(updateHandler, setWebhook);
         bot.setBotToken(botConfig.getBotToken());
         bot.setBotUsername(botConfig.getUserName());
         bot.setBotPath(botConfig.getWebHookPath());

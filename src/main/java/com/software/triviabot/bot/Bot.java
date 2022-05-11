@@ -1,9 +1,9 @@
 package com.software.triviabot.bot;
 
+import com.software.triviabot.bot.handler.UpdateHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
-import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
@@ -17,25 +17,25 @@ public class Bot extends SpringWebhookBot {
     private String botUsername;
     private String botToken;
 
-    private TelegramFacade telegramFacade;
+    private UpdateHandler updateHandler;
 
-    public Bot(TelegramFacade telegramFacade, DefaultBotOptions options,
+    public Bot(UpdateHandler updateHandler, DefaultBotOptions options,
         SetWebhook setWebhook, String botPath, String botUsername, String botToken) {
         super(options, setWebhook);
-        this.telegramFacade = telegramFacade;
+        this.updateHandler = updateHandler;
         this.botPath = botPath;
         this.botToken = botToken;
         this.botUsername = botUsername;
     }
 
-    public Bot(TelegramFacade telegramFacade, SetWebhook setWebhook) {
+    public Bot(UpdateHandler updateHandler, SetWebhook setWebhook) {
         super(setWebhook);
-        this.telegramFacade = telegramFacade;
+        this.updateHandler = updateHandler;
     }
 
     @SneakyThrows
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
-        return telegramFacade.handleUpdate(update);
+        return updateHandler.handleUpdate(update);
     }
 }

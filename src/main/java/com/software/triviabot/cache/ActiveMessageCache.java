@@ -5,12 +5,16 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
-// Holds the currently edited message
 @Slf4j
 @Service
 public class ActiveMessageCache {
+    // message to be edited during quiz.
+    // whole quiz consists of refreshing this message
     private static Message currentMessage;
-    private static Message messageToDelete;
+
+    // message with topic menu; cached to change its keyboard to hint menu
+    // after user picks a topic
+    private static Message topicMessage;
 
     public static void setMessage(Message message){
         currentMessage = message;
@@ -28,12 +32,12 @@ public class ActiveMessageCache {
         return currentMessage.getMessageId();
     }
 
-    public static Message getToDelete(){
-        return messageToDelete;
+    public static Message getTopicMessage(){
+        return topicMessage;
     }
 
-    public static void setToDelete(Message message) {
-        messageToDelete = message;
+    public static void setTopicMessage(Message message) {
+        topicMessage = message;
     }
 
     private ActiveMessageCache(){}

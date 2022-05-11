@@ -60,6 +60,13 @@ public class UserDAO {
         userRepo.save(user);
     }
 
+    public void saveNewUser(long userId, String username){
+        User user = new User();
+        user.setUserId(userId);
+        user.setUsername(username);
+        saveUser(user);
+    }
+
     public void deleteUser(User user){
         log.info("Deleting user {}", user.getUsername());
         userRepo.delete(user);
