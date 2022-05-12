@@ -1,4 +1,4 @@
-package com.software.triviabot.service.DAO;
+package com.software.triviabot.repo.object;
 
 import com.software.triviabot.data.Score;
 import com.software.triviabot.data.User;
@@ -6,15 +6,15 @@ import com.software.triviabot.repo.IUserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import java.util.List;
 
 @Slf4j
-@Service
+@Repository
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class UserDAO {
+public class UserRepo {
     private final IUserRepo userRepo;
     private final EntityManager entityManager;
 
@@ -42,10 +42,11 @@ public class UserDAO {
         userRepo.save(user);
     }
 
-    public User getRandomUser(){
+    public User getRandomUserExcluding(long userId){
         List<User> list = entityManager.createQuery(
-            "SELECT u FROM User u ORDER BY RAND()").getResultList();
-        return list.get(0);
+            "SELECT u FROM User u" + " WHERE NOT user_id=" + userId +
+                " ORDER BY RAND()").getResultList();
+        return !list.isEmpty() ? list.get(0) : null;
     }
 
     public void saveNameToUser(long userId, String name){
@@ -55,16 +56,16 @@ public class UserDAO {
         userRepo.save(user);
     }
 
-    public void saveUser(User user){
+    public User saveUser(User user){
         log.info("Saving user {}", user.getUsername());
-        userRepo.save(user);
+        return userRepo.save(user);
     }
 
-    public void saveNewUser(long userId, String username){
+    public User saveNewUser(long userId, String username){
         User user = new User();
         user.setUserId(userId);
         user.setUsername(username);
-        saveUser(user);
+        return saveUser(user);
     }
 
     public void deleteUser(User user){

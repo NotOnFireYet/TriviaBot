@@ -7,7 +7,7 @@ import com.software.triviabot.enums.State;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.HintContainer;
-import com.software.triviabot.service.DAO.UserDAO;
+import com.software.triviabot.repo.object.UserRepo;
 import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class UpdateHandler {
 
     private final ReplySender sender;
     private final MessageService msgService;
-    private final UserDAO userDAO;
+    private final UserRepo userRepo;
 
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         if (update.hasCallbackQuery()) {
@@ -52,8 +52,8 @@ public class UpdateHandler {
 
         if (state == null && input.equals("/start")){
             StateCache.setState(userId, State.START);
-            if (!userDAO.exists(userId)){
-                userDAO.saveNewUser(userId, message.getFrom().getUserName());
+            if (!userRepo.exists(userId)){
+                userRepo.saveNewUser(userId, message.getFrom().getUserName());
             }
             StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
             return eventHandler.getIntroMessage(chatId);
@@ -66,22 +66,21 @@ public class UpdateHandler {
                     return null;
 
                 case ENTERNAME:
-                    if (message.getText().isEmpty())
-                        return eventHandler.getInvalidNameMessage(chatId);
                     StateCache.setState(userId, State.START);
                     sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
                     sender.send(eventHandler.getRulesMessage(chatId));
                     response = sender.send(eventHandler.getChooseTopicMessage(chatId));
-                    ActiveMessageCache.setTopicMessage(response);
+                    ActiveMessageCache.setDeleteMessage(userId, response);
                     return null;
 
+                case FIRSTQUESTION:
                 case GAMEPROCESS:
                     if (HintContainer.getAllHintTexts().contains(input)) {
                         StateCache.setState(userId, State.GIVEHINT);
                         msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
                         Hint hint = HintContainer.getHintByText(message.getText());
                         if (HintCache.getRemainingHints(userId, hint) < 1) { // if no hints of this type remain
-                            eventHandler.handleNoMoreHints(chatId);
+                            eventHandler.handleNoMoreHints(chatId, userId);
                             return null;
                         }
                         eventHandler.processHintRequest(chatId, userId, hint);
@@ -90,16 +89,18 @@ public class UpdateHandler {
                         return nonCommandHandler.handle(message); // if message isn't a hint request, pass to NonCommandHandler
                     }
 
-                case GIVEHINT: // delete all user messages, including commands, until hint process is over
+                case GOTANSWER: // delete all user messages, including commands
+                case GIVEHINT:
+                case DELETEDATA:
                     msgService.deleteUserMessage(chatId, message.getMessageId());
                     return null;
 
                 case SCORE: // only react to main menu commands when main menu is displayed
                     switch (input) {
                         case "Начать викторину":
-                            StateCache.setState(userId, State.GAMEPROCESS);
+                            StateCache.setState(userId, State.FIRSTQUESTION);
                             response = sender.send(eventHandler.getChooseTopicMessage(chatId));
-                            ActiveMessageCache.setTopicMessage(response);
+                            ActiveMessageCache.setDeleteMessage(userId, response);
                             return null;
 
                         case "Напомнить правила":
@@ -109,7 +110,10 @@ public class UpdateHandler {
                             return eventHandler.getStatsMessage(chatId, userId);
 
                         case "Удалить мои данные":
-                            return eventHandler.deleteUserData(chatId, userId);
+                            StateCache.setState(userId, State.DELETEDATA);
+                            response = sender.send(eventHandler.getDeleteDataMessage(chatId));
+                            ActiveMessageCache.setDeleteMessage(userId, response);
+                            return null;
 
                         default:
                             return nonCommandHandler.handle(message);

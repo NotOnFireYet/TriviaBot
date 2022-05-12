@@ -2,43 +2,42 @@ package com.software.triviabot.cache;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
 public class ActiveMessageCache {
     // message to be edited during quiz.
     // whole quiz consists of refreshing this message
-    private static Message currentMessage;
+    private static Map<Long, Message> refreshMessageMap = new HashMap<>();
 
-    // message with topic menu; cached to change its keyboard to hint menu
-    // after user picks a topic
-    private static Message topicMessage;
-
-    public static void setMessage(Message message){
-        currentMessage = message;
-    }
-
-    public static SendMessage getMessage(){
-        SendMessage message = new SendMessage();
-        message.setText(currentMessage.getText());
-        if (currentMessage.getReplyMarkup() != null)
-            message.setReplyMarkup(currentMessage.getReplyMarkup());
-        return message;
-    }
-
-    public static int getMessageId(){
-        return currentMessage.getMessageId();
-    }
-
-    public static Message getTopicMessage(){
-        return topicMessage;
-    }
-
-    public static void setTopicMessage(Message message) {
-        topicMessage = message;
-    }
+    // message to be deleted
+    private static Map<Long, Message> deleteMessageMap = new HashMap<>();
 
     private ActiveMessageCache(){}
+
+    public static void setRefreshMessage(long userId, Message message){
+        refreshMessageMap.put(userId, message);
+    }
+
+    public static int getRefreshMessageId(long userId){
+        return refreshMessageMap.get(userId).getMessageId();
+    }
+
+    public static Message getDeleteMessage(long userId){
+        return deleteMessageMap.get(userId);
+    }
+
+    public static void setDeleteMessage(long userId, Message message) {
+        deleteMessageMap.put(userId, message);
+    }
+
+    public static void clearCache(long userId) {
+        log.info("Clearing active message cache for user {}", userId);
+        refreshMessageMap.remove(userId);
+        deleteMessageMap.remove(userId);
+    }
 }

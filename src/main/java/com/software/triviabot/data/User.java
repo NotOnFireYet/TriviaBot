@@ -13,7 +13,6 @@ import java.util.List;
 @Entity
 @Data
 @Table(name="users")
-// Entity for the user, one-to-many with scores
 public class User {
     @Id
     @NotNull

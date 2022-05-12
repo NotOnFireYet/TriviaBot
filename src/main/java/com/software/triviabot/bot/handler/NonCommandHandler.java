@@ -1,10 +1,7 @@
 package com.software.triviabot.bot.handler;
 
-import com.software.triviabot.bot.ReplySender;
-import com.software.triviabot.enums.State;
-import com.software.triviabot.cache.ActiveMessageCache;
 import com.software.triviabot.cache.StateCache;
-import com.software.triviabot.service.DAO.UserDAO;
+import com.software.triviabot.enums.State;
 import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,19 +26,21 @@ public class NonCommandHandler {
         State state = StateCache.getState(userId) == null ? State.IGNORE : StateCache.getState(userId);
 
         switch (state) {
-            case GIVEHINT:
+            case FIRSTQUESTION:
             case GAMEPROCESS:
+            case GIVEHINT:
+            case GOTANSWER:
+            case DELETEDATA:
                 msgService.deleteUserMessage(chatId, message.getMessageId()); // delete all non-command messages
-                break;
+                return null;
 
             case IGNORE:
             case START:
             case SCORE:
                 return null; // ignore all non-command messages
 
-            default:
-                throw new IllegalStateException("Unknown state: " + state);
+            default: // if unknown state, don't react
+                return null;
         }
-        return null;
     }
 }

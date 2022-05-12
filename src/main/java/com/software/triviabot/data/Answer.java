@@ -11,12 +11,11 @@ import javax.persistence.*;
 @Entity
 @Data
 @Table(name = "answers")
-// An entity for the answer, many-to-one with questions
 public class Answer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="answer_id")
-    private long answerId;
+    private int answerId;
 
     @ManyToOne
     @JoinColumn(name="question_id", nullable=false)
@@ -25,7 +24,13 @@ public class Answer {
     private String text;
 
     @Column(name="is_correct", nullable=false)
-    private Boolean isCorrect; // marks the correct answer
+    private Boolean isCorrect;
 
-    private int percentagePicked; // for "audience help" hint
+    private int percentPicked; // for "audience help" hint
+
+    @Override
+    public String toString() {
+        return "{answerId=" + this.getAnswerId() + ", questionId=" + this.question.getQuestionId()
+            + ", text=" + this.text + ", isCorrect="  + this.isCorrect + "}";
+    }
 }

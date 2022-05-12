@@ -4,9 +4,8 @@ import com.software.triviabot.data.Topic;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.data.Answer;
-import com.software.triviabot.service.DAO.QuestionDAO;
-import com.software.triviabot.service.DAO.TopicDAO;
-import com.software.triviabot.service.DAO.UserDAO;
+import com.software.triviabot.repo.object.TopicRepo;
+import com.software.triviabot.repo.object.UserRepo;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -14,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
@@ -27,9 +27,9 @@ import java.util.List;
 @Setter @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class MenuService { // Constructs button layouts
-    private final UserDAO userDAO;
-    private final QuestionDAO questionDAO;
-    private final TopicDAO topicDAO;
+    private final UserRepo userRepo;
+    private final QuestionService questionService;
+    private final TopicRepo topicRepo;
 
     //////////* START KEYBOARDS *//////////
     public ReplyKeyboardMarkup getMainMenu(){
@@ -54,10 +54,31 @@ public class MenuService { // Constructs button layouts
         return replyKeyboardMarkup;
     }
 
+    public ReplyKeyboard getDeleteOkKeyboard() {
+        InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        List<InlineKeyboardButton> row1 = new ArrayList<>();
+
+        InlineKeyboardButton button1 = new InlineKeyboardButton();
+        button1.setText("Продолжить");
+        button1.setCallbackData("DeleteDataCallback");
+
+        InlineKeyboardButton button2 = new InlineKeyboardButton();
+        button2.setText("Назад");
+        button2.setCallbackData("GoBackCallback");
+
+        row1.add(button1);
+        row1.add(button2);
+
+        rowList.add(row1);
+        inlineMarkup.setKeyboard(rowList);
+        return inlineMarkup;
+    }
+
     public InlineKeyboardMarkup getTopicsMenu(){
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        for (Topic topic : topicDAO.findAllTopics()){
+        for (Topic topic : topicRepo.findAllTopics()){
             InlineKeyboardButton button = new InlineKeyboardButton();
             button.setText(topic.getTitle());
             button.setCallbackData(topic.getTopicId() + "TopicCallback");
@@ -114,12 +135,11 @@ public class MenuService { // Constructs button layouts
     public InlineKeyboardMarkup getQuestionKeyboard(List<Answer> answers) {
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        String isCorrect;
         for (Answer answer : answers) { // Compiles list of rows with buttons
             InlineKeyboardButton button = new InlineKeyboardButton();
             button.setText(answer.getText());
-            isCorrect = answer.getIsCorrect() ? "Correct" : "Wrong"; // builds callbacks for right and wrong answers
-            button.setCallbackData("answerCallback" + isCorrect);
+            int answerId = answer.getAnswerId();
+            button.setCallbackData(answerId + "AnswerCallback");
 
             List<InlineKeyboardButton> row = new ArrayList<>();
             row.add(button);
@@ -130,7 +150,7 @@ public class MenuService { // Constructs button layouts
     }
 
     public InlineKeyboardMarkup getNextQuestionKeyboard() {
-        return getOneButtonInlineKeyboard("Следующий вопрос", "nextQuestionCallback");
+        return getOneButtonInlineKeyboard("Следующий вопрос", "NextQuestionCallback");
     }
 
     //////////* UTILITY *//////////

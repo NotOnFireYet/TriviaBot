@@ -3,12 +3,8 @@ package com.software.triviabot.data;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
 
 import javax.persistence.*;
-import javax.persistence.Column;
-import javax.validation.constraints.NotNull;
 import java.util.List;
 
 @AllArgsConstructor
@@ -16,7 +12,6 @@ import java.util.List;
 @Entity
 @Data
 @Table(name = "questions")
-// Question entity, one-to-many with answers
 public class Question {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,4 +34,23 @@ public class Question {
     @OneToMany(mappedBy="question", cascade = CascadeType.ALL,
         fetch = FetchType.EAGER, orphanRemoval = true)
     private List<Answer> answers;
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Question)) {
+            return false;
+        }
+
+        Question q = (Question)o;
+        return this.questionId == q.getQuestionId();
+    }
+
+    @Override
+    public String toString() {
+        return "{questionId=" + this.getQuestionId() + ", numberInTopic=" + this.numberInTopic +
+            ", text=" + this.text + ", topicId="  + this.topic.getTopicId() + "}";
+    }
 }

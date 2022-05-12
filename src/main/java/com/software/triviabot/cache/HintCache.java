@@ -16,7 +16,7 @@ public class HintCache { // map of users with all of their remaining hint option
 
     private HintCache(){}
 
-    public static void setUpHints(long userId){
+    public static void setUpCache(long userId){
         // populating the hint map with unspent hints
         Map<Hint, Integer> hintMap = new HashMap<>();
         for (Hint hint : Hint.values()) {
@@ -36,7 +36,8 @@ public class HintCache { // map of users with all of their remaining hint option
         hintCacheMap.get(userId).put(hint, prevHintNumber - 1);
     }
 
-    public static void deleteHintCache(long userId){
+    public static void clearCache(long userId){
+        log.info("Clearing hint cache for user {}", userId);
         hintCacheMap.remove(userId);
     }
 

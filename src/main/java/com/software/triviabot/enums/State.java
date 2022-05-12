@@ -6,8 +6,11 @@ public enum State {
     START, // interaction up until topics menu
     ENTERNAME, // accepting name input
 
-    GAMEPROCESS, // game in process
+    FIRSTQUESTION, // first question is sent
+    GAMEPROCESS, // game in process after first question
+    GOTANSWER, // processing given answer
     GIVEHINT, // accepting hint request
 
-    SCORE // ignore non-command user input
+    SCORE, // main menu after game
+    DELETEDATA // user requested to delete their data
 }

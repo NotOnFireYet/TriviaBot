@@ -19,10 +19,15 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class MessageService {
     private final ReplySender sender;
 
-    public void editMessageText(long chatId, String text) throws TelegramApiException {
+    public void deleteCachedMessage(long chatId, long userId) throws TelegramApiException {
+        int messageId = ActiveMessageCache.getDeleteMessage(userId).getMessageId();
+        deleteUserMessage(chatId, messageId);
+    }
+
+    public void editMessageText(long chatId, long userId, String text) throws TelegramApiException {
         EditMessageText editText = new EditMessageText();
         editText.setChatId(String.valueOf(chatId));
-        editText.setMessageId(ActiveMessageCache.getMessageId());
+        editText.setMessageId(ActiveMessageCache.getRefreshMessageId(userId));
         editText.setText(text);
         sender.edit(editText, null);
     }
@@ -34,10 +39,10 @@ public class MessageService {
         sender.delete(deleteMessage);
     }
 
-    public void editInlineMarkup(long chatId, InlineKeyboardMarkup keyboard) throws TelegramApiException {
+    public void editInlineMarkup(long chatId, long userId, InlineKeyboardMarkup keyboard) throws TelegramApiException {
         EditMessageReplyMarkup editKeyboard = new EditMessageReplyMarkup();
         editKeyboard.setChatId(String.valueOf(chatId));
-        editKeyboard.setMessageId(ActiveMessageCache.getMessageId());
+        editKeyboard.setMessageId(ActiveMessageCache.getRefreshMessageId(userId));
         editKeyboard.setReplyMarkup(keyboard);
         sender.edit(null, editKeyboard);
     }

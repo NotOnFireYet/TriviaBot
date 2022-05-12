@@ -22,4 +22,9 @@ public class StateCache { // Keeps current bot state for each user id
         stateMap.put(userId, state);
         log.info("State for user {}: {}", userId, state);
     }
+
+    public static void clearCache(long userId){
+        log.info("Clearing state cache for user {}", userId);
+        stateMap.remove(userId);
+    }
 }

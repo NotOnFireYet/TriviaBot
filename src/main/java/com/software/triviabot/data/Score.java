@@ -6,13 +6,11 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 
-@AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Data
 @Table(name = "scores")
-// Entity for the scores to keep statistics.
-// Many-to-one with users
+// Entity for the user score to keep statistics
 public class Score {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

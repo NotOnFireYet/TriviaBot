@@ -19,7 +19,7 @@ public class QuestionCache {
 
     private QuestionCache(){}
 
-    public static void setupQuestionCache(long userId, Topic topic){
+    public static void setUpCache(long userId, Topic topic){
         currentQuestionMap.put(userId, 0);
         currentTopicMap.put(userId, topic);
         log.info("Current topic for user {}: {}", userId, topic.getTopicId());
@@ -54,14 +54,9 @@ public class QuestionCache {
         return topic.getQuestions().size() == getCurrentQuestionNum(userId);
     }
 
-    // deletes the record for user after a game is complete
-    public static void deleteQuestionCache(Long userId) {
+    public static void clearCache(Long userId) {
         log.info("Clearing question cache for user {}", userId);
-        if (currentQuestionMap.containsKey(userId)) {
-            currentQuestionMap.remove(userId);
-        }
-        if (currentTopicMap.containsKey(userId)) {
-            currentTopicMap.remove(userId);
-        }
+        currentQuestionMap.remove(userId);
+        currentTopicMap.remove(userId);
     }
 }

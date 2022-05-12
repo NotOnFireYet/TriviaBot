@@ -1,21 +1,21 @@
 package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ReplySender;
-import com.software.triviabot.data.Answer;
-import com.software.triviabot.enums.State;
-import com.software.triviabot.enums.Hint;
 import com.software.triviabot.cache.ActiveMessageCache;
-import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
+import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.FailMessageContainer;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.container.PriceContainer;
-import com.software.triviabot.data.Question;
-import com.software.triviabot.data.Score;
-import com.software.triviabot.data.User;
-import com.software.triviabot.service.DAO.ScoreDAO;
-import com.software.triviabot.service.DAO.UserDAO;
+import com.software.triviabot.data.*;
+import com.software.triviabot.enums.Hint;
+import com.software.triviabot.enums.State;
+import com.software.triviabot.repo.object.QuestionStatsRepo;
+import com.software.triviabot.repo.object.ScoreRepo;
+import com.software.triviabot.repo.object.UserRepo;
+import com.software.triviabot.service.QuestionStatService;
+import com.software.triviabot.service.ScoreService;
 import com.software.triviabot.service.MenuService;
 import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -26,30 +26,29 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 @Service
 public class EventHandler {
-    private final UserDAO userDAO;
-    private final ScoreDAO scoreDAO;
-
+    private final UserRepo userRepo;
+    private final ScoreService scoreService;
+    private final QuestionStatService statService;
     private final MenuService menuService;
-    private final ReplySender sender;
     private final MessageService msgService;
+
+    private final QuestionStatsRepo statRepo;
+    private final ScoreRepo scoreRepo;
+
+    private final ReplySender sender;
+
+    private static final String questionEmoji = "\uD83D\uDD39 "; // blue diamond emoji
 
     ////////////* NEW USER START EVENTS */////////////
     public SendMessage processEnteredName(long userId, long chatId, String name) {
-        userDAO.saveNameToUser(userId, name);
+        userRepo.saveNameToUser(userId, name);
         return msgService.buildMessage(chatId, "Здравствуйте, " + name + "!");
-    }
-
-    public SendMessage getInvalidNameMessage(long chatId){
-        return msgService.buildMessage(chatId, "Имя должно содержать текст!");
     }
 
     public SendMessage getChooseTopicMessage(long chatId) {
@@ -60,16 +59,15 @@ public class EventHandler {
 
     public SendMessage getRulesMessage(long chatId){
         String rules = "Вам предстоит 15 вопросов. " +
-            "\nКаждый верный ответ увеличивает ваш выигрыш, каждый неверный - " +
+            "\nКаждый верный ответ увеличивает выигрыш, каждый неверный - " +
             "заканчивает игру.\nНо не все так просто!" +
             "\nВам доступны подсказки:\n\n" +
             "<b>" + HintContainer.getText(Hint.FIFTY_FIFTY) +
             "</b>\n бот оставит 1 верный и 1 неверный ответ\n\n"+
             "<b>" + HintContainer.getText(Hint.CALL_FRIEND) +
-            "</b>\n бот покажет, как на этот вопрос ответил другой рандомный пользователь " +
-            "при первом прохождении\n\n" +
+            "</b>\n бот покажет, как на этот вопрос впервые ответил рандомный пользователь\n\n" +
             "<b>" + HintContainer.getText(Hint.AUDIENCE_HELP) +
-            "</b>\n бот покажет статистику ответов заранее опрошенной аудитории\n\n"+
+            "</b>\n бот выберет 20 рандомных пользователей и покажет статистику их ответов на этот вопрос\n\n"+
             "Каждую подсказку можно использовать 2 раза за игру.\n" +
             "Желаем удачи!";
         return msgService.buildMessage(chatId, rules);
@@ -98,18 +96,17 @@ public class EventHandler {
         Question question = QuestionCache.getCurrentQuestion(userId);
         int num = QuestionCache.getCurrentQuestionNum(userId);
         String text = "№" + num + ". Вопрос на " +
-            PriceContainer.getPriceByQuestionNum(num) + " рублей."
-            + "\n\uD83D\uDD39 " + question.getText(); // blue diamond emoji
+            PriceContainer.getPriceByQuestionNum(num) + " рублей.\n"
+            + questionEmoji + question.getText(); // blue diamond emoji
         InlineKeyboardMarkup keyboard = menuService.getQuestionKeyboard(question.getAnswers());
-        int questionNum = QuestionCache.getCurrentQuestionNum(userId);
 
-        if (questionNum == 1) { // if first question to be sent, send as separate message
+        if (StateCache.getState(userId) == State.FIRSTQUESTION) { // if first question to be sent, send as separate message
             SendMessage message = msgService.buildMessage(chatId, text);
             message.setReplyMarkup(keyboard);
-            ActiveMessageCache.setMessage(sender.send(message)); // set the message to be refreshed during quiz
+            ActiveMessageCache.setRefreshMessage(userId, sender.send(message)); // set the message to be refreshed during quiz
         } else {
-            msgService.editMessageText(chatId, text);
-            msgService.editInlineMarkup(chatId, keyboard);
+            msgService.editMessageText(chatId, userId, text);
+            msgService.editInlineMarkup(chatId, userId, keyboard);
         }
     }
 
@@ -118,13 +115,13 @@ public class EventHandler {
             Question question = QuestionCache.getCurrentQuestion(userId);
             String text = question.getCorrectAnswerReaction();
             if (QuestionCache.isLastQuestion(userId)) {
-                msgService.editMessageText(chatId, text);
+                msgService.editMessageText(chatId, userId, text);
                 processScoreEvent(chatId, userId, true);
                 return;
             }
             text += "\n" + PriceContainer.getPriceByQuestionNum(question.getNumberInTopic()) + " рублей ваши!";
-            msgService.editMessageText(chatId, text);
-            msgService.editInlineMarkup(chatId, menuService.getNextQuestionKeyboard());
+            msgService.editMessageText(chatId, userId, text);
+            msgService.editInlineMarkup(chatId, userId, menuService.getNextQuestionKeyboard());
         } else {
             processScoreEvent(chatId, userId, false);
         }
@@ -135,43 +132,57 @@ public class EventHandler {
         HintCache.decreaseHint(userId, hint);
         String text = "Вы выбрали подсказку \"" + HintContainer.getText(hint) + "\"." +
             "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint);
-        msgService.editMessageText(chatId, text);
-        msgService.editInlineMarkup(chatId, menuService.getHintOkKeyboard(hint));
+        msgService.editMessageText(chatId, userId, text);
+        msgService.editInlineMarkup(chatId, userId, menuService.getHintOkKeyboard(hint));
     }
 
-    public void handleNoMoreHints(long chatId) throws TelegramApiException {
-        msgService.editMessageText(chatId, "Это подсказка закончилась :(");
-        msgService.editInlineMarkup(chatId, menuService.getNoHintsOkKeyboard());
+    public void handleNoMoreHints(long chatId, long userId) throws TelegramApiException {
+        msgService.editMessageText(chatId, userId, "Это подсказка закончилась :(");
+        msgService.editInlineMarkup(chatId, userId, menuService.getNoHintsOkKeyboard());
     }
 
-    public void processCallFriendRequest(long chatId, long userId, Question question) {
-        User user = userDAO.getRandomUser();
-        log.info("Call Friend invoked.");
-    }
-
-    // todo: finish this
-    public void processAudienceHelpRequest(long chatId, Question question) throws TelegramApiException {
-        List<Answer> answers = new ArrayList<>(question.getAnswers());
-        for (Answer answer : question.getAnswers()) { // edit answer texts to include percentages
-            String answerText = answer.getText();
-            answerText += " | " + answer.getPercentagePicked() + "%";
-            answer.setText(answerText);
+    // seeing how another random user answered the same question
+    public void processCallFriendRequest(long chatId, long userId, Question question) throws TelegramApiException {
+        User user = userRepo.getRandomUserExcluding(userId);
+        String text;
+        InlineKeyboardMarkup keyboard;
+        if (user == null){
+            text = "Удивительно, но вы первыми столкнулись с этим вопросом. Поздравляем? \uD83E\uDD28" + //raised eyebrow emoji
+                "\nВы увидите подсказку \"50/50\" за счет этой.";
+            keyboard = menuService.getHintOkKeyboard(Hint.FIFTY_FIFTY);
+        } else {
+            QuestionStat stat = statRepo.getByUserAndQuestionId(user.getUserId(), question.getQuestionId());
+            text = "Первая догадка случайного пользователя:\n" + stat.getAnswer().getText()
+            + "\n\n" + questionEmoji + question.getText();
+            keyboard =  menuService.getQuestionKeyboard(question.getAnswers());
         }
-        String questionText = "\uD83D\uDD39 " + question.getText();
+        msgService.editMessageText(chatId, userId, text);
+        msgService.editInlineMarkup(chatId, userId, keyboard);
+    }
 
-        msgService.editMessageText(chatId, questionText);
-        msgService.editInlineMarkup(chatId, menuService.getQuestionKeyboard(answers));
+    public void processAudienceHelpRequest(long chatId, long userId, Question question) throws TelegramApiException {
+        List<Answer> answers = question.getAnswers();
+        List<Integer> percents = statService.getAnswerPercents(userId, question);
+        if (!percents.isEmpty()){
+            appendPercentsToAnswers(answers, percents);
+            String text = questionEmoji + question.getText();
+            InlineKeyboardMarkup keyboard = menuService.getQuestionKeyboard(answers);
+            msgService.editMessageText(chatId, userId, text);
+            msgService.editInlineMarkup(chatId, userId, keyboard);
 
-        for (Answer answer : answers) { // resetting answer texts
-            String text = answer.getText();
-            answer.setText(text.substring(0, text.indexOf(" ")));
+            for (Answer answer : answers) { // resetting answer texts
+                String answerText = answer.getText();
+                answer.setText(answerText.substring(0, answerText.indexOf("|")));
+            }
+        } else {
+            editNoHintDataMessage(chatId, userId);
         }
     }
 
-    public void processFiftyFiftyRequest(long chatId, Question question) throws TelegramApiException {
-        String text = "\uD83D\uDD39 " + question.getText();
-        msgService.editMessageText(chatId, text);
-        msgService.editInlineMarkup(chatId, menuService.getFiftyFiftyKeyboard(question.getAnswers()));
+    public void processFiftyFiftyRequest(long chatId, long userId, Question question) throws TelegramApiException {
+        String text = questionEmoji + question.getText();
+        msgService.editMessageText(chatId, userId, text);
+        msgService.editInlineMarkup(chatId, userId, menuService.getFiftyFiftyKeyboard(question.getAnswers()));
     }
 
 
@@ -180,7 +191,7 @@ public class EventHandler {
         StateCache.setState(userId, State.SCORE);
 
         Score score = new Score();
-        score.setUser(userDAO.findUserById(userId));
+        score.setUser(userRepo.findUserById(userId));
         score.setSuccessful(isSuccessful);
         int questionNum = QuestionCache.getCurrentQuestionNum(userId);
         score.setAnsweredQuestions(questionNum);
@@ -190,18 +201,18 @@ public class EventHandler {
             questionPrice = isSuccessful ? PriceContainer.getPriceByQuestionNum(questionNum) :
                 PriceContainer.getPriceByQuestionNum(questionNum - 1);
         score.setGainedMoney(questionPrice);
-        scoreDAO.saveScore(score);
-        userDAO.saveScoreToUser(userId, score);
+        scoreRepo.saveScore(score);
+        userRepo.saveScoreToUser(userId, score);
 
         SendMessage tryAgainMessage = msgService.buildMessage(chatId, "Ваш выигрыш: " +
             questionPrice +" рублей. \nВы можете посмотреть свою статистику или попробовать еще раз.");
         tryAgainMessage.setReplyMarkup(menuService.getMainMenu());
 
-        sendScoreMessage(chatId, questionPrice, isSuccessful);
+        sendScoreMessage(chatId, userId, questionPrice, isSuccessful);
         sender.send(tryAgainMessage);
     }
 
-    private void sendScoreMessage(long chatId, int wonMoney, boolean isSuccessful) throws TelegramApiException {
+    private void sendScoreMessage(long chatId, long userId, int wonMoney, boolean isSuccessful) throws TelegramApiException {
         String text;
         if (isSuccessful){
             text = "Вопросы закончены! Миллион рублей ваши!";
@@ -209,19 +220,19 @@ public class EventHandler {
         } else {
             int lostMoney = 1000000 - wonMoney;
             text = "Увы, ответ неправильный! " + lostMoney + FailMessageContainer.getRandomFailMessage();
-            msgService.editMessageText(chatId, text);
+            msgService.editMessageText(chatId, userId, text);
         }
     }
 
 
     ////////////* MAIN MENU *////////////
     public SendMessage getStatsMessage(long chatId, long userId) {
-        int numOfTries = scoreDAO.findScoresByUserId(userId).size();
-        int numOfWins = scoreDAO.getNumberOfWins(userId);
-        long totalMoney = scoreDAO.getTotalMoney(userId);
+        int numOfTries = scoreRepo.findScoresByUserId(userId).size();
+        int numOfWins = scoreService.getNumberOfWins(userId);
+        long totalMoney = scoreService.getTotalMoney(userId);
         double winPercentage = numOfWins / (double)numOfTries * 100;
 
-        User user = userDAO.findUserById(userId);
+        User user = userRepo.findUserById(userId);
         String text = user.getName() + " | @" + user.getUsername()
             + "\n\n\uD83D\uDCC8<b> Всего игр:</b> " + numOfTries // graph emoji
             + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>" + // trophy emoji
@@ -229,7 +240,40 @@ public class EventHandler {
         return msgService.buildMessage(chatId, text);
     }
 
-    public SendMessage deleteUserData(long chatId, long userId) throws TelegramApiException {
-        return msgService.buildMessage(chatId, "Функция в разработке"); // todo: this
+    public SendMessage getDeleteDataMessage(long chatId) {
+        SendMessage message = msgService.buildMessage(chatId, "Бот забудет ваш юзернейм, имя и статистику.");
+        message.setReplyMarkup(menuService.getDeleteOkKeyboard());
+        return message;
+    }
+
+    public void deleteUserData(long userId) {
+        ActiveMessageCache.clearCache(userId);
+        QuestionCache.clearCache(userId);
+        HintCache.clearCache(userId);
+        StateCache.clearCache(userId);
+        scoreRepo.deleteUserScores(userId);
+        statRepo.deleteAllUserStats(userId);
+        userRepo.deleteUser(userRepo.findUserById(userId));
+    }
+
+    ////////////* UTILITY *////////////
+
+    public void editNoHintDataMessage(long chatId, long userId) throws TelegramApiException {
+        String text = "Удивительно, но вы первыми столкнулись с этим вопросом. Поздравляем? \uD83E\uDD28" + //raised eyebrow emoji
+            "\nВы увидите подсказку \"50/50\" за счет этой.";
+        InlineKeyboardMarkup keyboard = menuService.getHintOkKeyboard(Hint.FIFTY_FIFTY);
+        msgService.editMessageText(chatId, userId, text);
+        msgService.editInlineMarkup(chatId, userId, keyboard);
+    }
+
+    private void appendPercentsToAnswers(List<Answer> answers, List<Integer> percents){
+        for (int i = 0; i < answers.size(); i++)
+            answers.get(i).setPercentPicked(percents.get(i));
+
+        for (Answer answer : answers) { // edit answer texts to include percentages
+            String answerText = answer.getText();
+            answerText += " | " + answer.getPercentPicked() + "%";
+            answer.setText(answerText);
+        }
     }
 }
