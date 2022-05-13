@@ -1,13 +1,11 @@
 package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ReplySender;
+import com.software.triviabot.cache.ActiveMessageCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
-import com.software.triviabot.data.Answer;
-import com.software.triviabot.data.Question;
-import com.software.triviabot.data.QuestionStat;
-import com.software.triviabot.data.User;
+import com.software.triviabot.data.*;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.IAnswerRepo;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
@@ -20,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Slf4j
@@ -45,9 +44,18 @@ public class CallbackQueryHandler {
             msgService.deleteCachedMessage(chatId, userId);
             String topicIdString = data.replace("TopicCallback", "");
             int topicId = Integer.parseInt(topicIdString);
+            Topic topic = topicRepo.findTopicById(topicId);
             QuestionCache.setUpCache(userId, topicRepo.findTopicById(topicId));
-            HintCache.setUpCache(userId);
 
+            if (topic.getQuestions().isEmpty()) {
+                eventHandler.handleNoQuestions(chatId);
+                StateCache.setState(userId, State.START);
+                Message response = sender.send(eventHandler.getChooseTopicMessage(chatId));
+                ActiveMessageCache.setDeleteMessage(userId, response);
+                return null;
+            }
+
+            HintCache.setUpCache(userId);
             sender.send(eventHandler.getKeyboardSwitchMessage(chatId));
             StateCache.setState(userId, State.FIRSTQUESTION);
             eventHandler.updateQuestion(chatId, userId);
@@ -120,6 +128,4 @@ public class CallbackQueryHandler {
         }
         return null;
     }
-
-
 }

@@ -23,6 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -85,6 +86,11 @@ public class EventHandler {
         SendMessage message = msgService.buildMessage(chatId, "Начнем!");
         message.setReplyMarkup(menuService.getHintMenu());
         return message;
+    }
+
+
+    public void handleNoQuestions(long chatId) throws TelegramApiException {
+        sender.send(msgService.buildMessage(chatId, "В теме нет вопросов. Пожалуйста, выберите другую."));
     }
 
 

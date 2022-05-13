@@ -78,16 +78,21 @@ public class MenuService { // Constructs button layouts
     public InlineKeyboardMarkup getTopicsMenu(){
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        for (Topic topic : topicRepo.findAllTopics()){
-            InlineKeyboardButton button = new InlineKeyboardButton();
-            button.setText(topic.getTitle());
-            button.setCallbackData(topic.getTopicId() + "TopicCallback");
-            List<InlineKeyboardButton> row = new ArrayList<>();
-            row.add(button);
-            rowList.add(row);
+        List<Topic> topics = topicRepo.findAllTopics();
+        if (!topics.isEmpty()) {
+            for (Topic topic : topics) {
+                InlineKeyboardButton button = new InlineKeyboardButton();
+                button.setText(topic.getTitle());
+                button.setCallbackData(topic.getTopicId() + "TopicCallback");
+                List<InlineKeyboardButton> row = new ArrayList<>();
+                row.add(button);
+                rowList.add(row);
+            }
+            inlineMarkup.setKeyboard(rowList);
+            return inlineMarkup;
+        } else {
+            throw new NullPointerException("No topics in database");
         }
-        inlineMarkup.setKeyboard(rowList);
-        return inlineMarkup;
     }
 
 

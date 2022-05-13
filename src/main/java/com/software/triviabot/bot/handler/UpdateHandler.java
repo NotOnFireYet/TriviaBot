@@ -34,7 +34,11 @@ public class UpdateHandler {
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            return callbackQueryHandler.processCallbackQuery(callbackQuery);
+            try {
+                return callbackQueryHandler.processCallbackQuery(callbackQuery);
+            } catch (NullPointerException e) {
+
+            }
         } else {
             Message message = update.getMessage();
             if (message != null && message.hasText()) {
@@ -91,7 +95,7 @@ public class UpdateHandler {
 
                 case GOTANSWER: // delete all user messages, including commands
                 case GIVEHINT:
-                case DELETEDATA:
+                case DELETEALL:
                     msgService.deleteUserMessage(chatId, message.getMessageId());
                     return null;
 
@@ -110,7 +114,7 @@ public class UpdateHandler {
                             return eventHandler.getStatsMessage(chatId, userId);
 
                         case "Удалить мои данные":
-                            StateCache.setState(userId, State.DELETEDATA);
+                            StateCache.setState(userId, State.DELETEALL);
                             response = sender.send(eventHandler.getDeleteDataMessage(chatId));
                             ActiveMessageCache.setDeleteMessage(userId, response);
                             return null;

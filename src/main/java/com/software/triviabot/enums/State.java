@@ -11,6 +11,7 @@ public enum State {
     GOTANSWER, // processing given answer
     GIVEHINT, // accepting hint request
 
+    DELETEALL, // delete all messages including commands
     SCORE, // main menu after game
     DELETEDATA // user requested to delete their data
 }

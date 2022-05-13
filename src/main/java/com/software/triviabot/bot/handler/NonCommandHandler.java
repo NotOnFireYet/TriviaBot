@@ -30,7 +30,7 @@ public class NonCommandHandler {
             case GAMEPROCESS:
             case GIVEHINT:
             case GOTANSWER:
-            case DELETEDATA:
+            case DELETEALL:
                 msgService.deleteUserMessage(chatId, message.getMessageId()); // delete all non-command messages
                 return null;
 
