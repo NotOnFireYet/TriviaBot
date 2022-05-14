@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 // Keeps hint values corresponding to button texts
-// for easier processing and keyboard building
 @Component
 public class HintContainer {
     private static final Map<Hint, String> hintTextMap = Map.of(

@@ -7,7 +7,7 @@ import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.data.*;
 import com.software.triviabot.enums.State;
-import com.software.triviabot.repo.IAnswerRepo;
+import com.software.triviabot.repo.object.AnswerRepo;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
 import com.software.triviabot.repo.object.TopicRepo;
 import com.software.triviabot.repo.object.UserRepo;
@@ -26,7 +26,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class CallbackQueryHandler {
     private final TopicRepo topicRepo;
-    private final IAnswerRepo answerRepo;
+    private final AnswerRepo answerRepo;
     private final QuestionStatsRepo statRepo;
     private final UserRepo userRepo;
 
@@ -67,7 +67,7 @@ public class CallbackQueryHandler {
             StateCache.setState(userId, State.GOTANSWER);
             String answerIdString = data.replace("AnswerCallback", "");
             int answerId = Integer.parseInt(answerIdString);
-            Answer answer = answerRepo.getById(answerId);
+            Answer answer = answerRepo.findById(answerId);
             User user = userRepo.findUserById(userId);
 
             // if it's the first time this user answers this question

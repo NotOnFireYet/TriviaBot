@@ -14,16 +14,15 @@ import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
 import com.software.triviabot.repo.object.ScoreRepo;
 import com.software.triviabot.repo.object.UserRepo;
-import com.software.triviabot.service.QuestionStatService;
-import com.software.triviabot.service.ScoreService;
 import com.software.triviabot.service.MenuService;
 import com.software.triviabot.service.MessageService;
+import com.software.triviabot.service.QuestionStatService;
+import com.software.triviabot.service.ScoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -68,7 +67,7 @@ public class EventHandler {
             "<b>" + HintContainer.getText(Hint.CALL_FRIEND) +
             "</b>\n бот покажет, как на этот вопрос впервые ответил рандомный пользователь\n\n" +
             "<b>" + HintContainer.getText(Hint.AUDIENCE_HELP) +
-            "</b>\n бот выберет 20 рандомных пользователей и покажет статистику их ответов на этот вопрос\n\n"+
+            "</b>\n бот выберет 10 рандомных пользователей и покажет статистику их ответов на этот вопрос\n\n"+
             "Каждую подсказку можно использовать 2 раза за игру.\n" +
             "Желаем удачи!";
         return msgService.buildMessage(chatId, rules);
