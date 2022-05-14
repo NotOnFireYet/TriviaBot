@@ -2,6 +2,8 @@ package com.software.triviabot.config;
 
 import com.software.triviabot.bot.Bot;
 import com.software.triviabot.bot.handler.UpdateHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -11,12 +13,10 @@ import org.telegram.telegrambots.meta.api.methods.updates.SetWebhook;
 import javax.sql.DataSource;
 
 @Configuration
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AppConfig {
     private final BotConfig botConfig;
-
-    public AppConfig(BotConfig botConfig) {
-        this.botConfig = botConfig;
-    }
+    private final DbConfig dbConfig;
 
     @Bean
     public SetWebhook setWebhookInstance() {
@@ -35,10 +35,10 @@ public class AppConfig {
     @Bean
     public DataSource dataSource(){
         DriverManagerDataSource source = new DriverManagerDataSource();
-        source.setDriverClassName(botConfig.getDriverClassName());
-        source.setUrl(botConfig.getDbUrl());
-        source.setUsername(botConfig.getDbUsername());
-        source.setPassword(botConfig.getDbPassword());
+        source.setDriverClassName(dbConfig.getDriverClassName());
+        source.setUrl(dbConfig.getDbUrl());
+        source.setUsername(dbConfig.getDbUsername());
+        source.setPassword(dbConfig.getDbPassword());
         return source;
     }
 
