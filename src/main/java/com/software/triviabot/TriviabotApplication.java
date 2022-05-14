@@ -1,15 +1,12 @@
 package com.software.triviabot;
 
-import com.software.triviabot.data.Topic;
-import com.software.triviabot.repo.object.TopicRepo;
-import com.software.triviabot.service.QuestionService;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import javax.sql.DataSource;
 
 @SpringBootApplication
 public class TriviabotApplication {
