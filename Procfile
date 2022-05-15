@@ -1,1 +1,1 @@
-web: java $JAVA_OPTS -cp ./target/classes:./target/dependency/* com.software.triviabot.riviabotApplication.java
+web: java $JAVA_OPTS -cp ./target/classes:./target/dependency/* com.software.triviabot.TriviabotApplication.java
