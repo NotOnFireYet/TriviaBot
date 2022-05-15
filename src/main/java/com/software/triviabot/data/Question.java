@@ -25,9 +25,10 @@ public class Question {
     @JoinColumn(name="topic_id")
     private Topic topic;
 
-    @Column(unique=true, nullable = false)
+    @Column(unique=true, length = 500)
     private String text;
 
+    @Column(unique=true, length = 500)
     private String correctAnswerReaction;
 
     @Column(unique=true)
@@ -50,7 +51,6 @@ public class Question {
 
     @Override
     public String toString() {
-        return "{questionId=" + this.getQuestionId() + ", numberInTopic=" + this.numberInTopic +
-            ", text=" + this.text + ", topicId="  + this.topic.getTopicId() + "}";
+        return "{questionId=" + this.getQuestionId() + ", text=" + this.text + ", topicId="  + this.topic.getTopicId() + "}";
     }
 }

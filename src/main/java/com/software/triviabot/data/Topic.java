@@ -18,6 +18,7 @@ public class Topic {
     @Column(name = "topic_id")
     private int topicId;
 
+    @Column(length = 100)
     private String title;
 
     @Column(unique=true)

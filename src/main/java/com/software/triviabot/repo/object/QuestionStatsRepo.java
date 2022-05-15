@@ -18,6 +18,7 @@ import java.util.List;
 public class QuestionStatsRepo {
     private final IQuestionStatsRepo statsRepo;
     private final EntityManager entityManager;
+    private final UserRepo userRepo;
 
     public QuestionStat saveStat(QuestionStat stat) {
         log.info("Saving stat for question {}", stat.getQuestion().getQuestionId());
@@ -38,7 +39,7 @@ public class QuestionStatsRepo {
             "SELECT q FROM QuestionStat q WHERE question_id=" + questionId
                 + "AND NOT user_id=" + userId)
             .getResultList();
-        return !list.isEmpty() ? list : new ArrayList<>();
+        return list;
     }
 
     public boolean hasStat(long userId, long questionId) {
@@ -50,7 +51,9 @@ public class QuestionStatsRepo {
 
     @Transactional
     public void deleteAllUserStats(long userId) {
-        entityManager.createQuery("DELETE FROM QuestionStat q WHERE user_id=" + userId)
-            .executeUpdate();
+        if (userRepo.findUserById(userId) != null) {
+            entityManager.createQuery("DELETE FROM QuestionStat q WHERE user_id=" + userId)
+                .executeUpdate();
+        }
     }
 }

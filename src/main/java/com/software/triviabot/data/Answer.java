@@ -18,12 +18,13 @@ public class Answer {
     private int answerId;
 
     @ManyToOne
-    @JoinColumn(name="question_id", nullable=false)
+    @JoinColumn(name="question_id")
     private Question question;
 
+    @Column(length = 100)
     private String text;
 
-    @Column(name="is_correct", nullable=false)
+    @Column(name="is_correct")
     private Boolean isCorrect;
 
     private int percentPicked; // for "audience help" hint

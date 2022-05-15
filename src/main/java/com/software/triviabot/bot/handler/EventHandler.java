@@ -51,7 +51,7 @@ public class EventHandler {
         return msgService.buildMessage(chatId, "Здравствуйте, " + name + "!");
     }
 
-    public SendMessage getChooseTopicMessage(long chatId) {
+    public SendMessage getChooseTopicMessage(long chatId) throws NullPointerException {
         SendMessage message = msgService.buildMessage(chatId, "Выберите тему, чтобы начать викторину.");
         message.setReplyMarkup(menuService.getTopicsMenu());
         return message;
@@ -92,6 +92,10 @@ public class EventHandler {
         sender.send(msgService.buildMessage(chatId, "В теме нет вопросов. Пожалуйста, выберите другую."));
     }
 
+    public SendMessage getNoTopicsMessage(long chatId) {
+        return msgService.buildMessage(chatId, "Темы временно отсутствуют. Приносим извинения :(");
+    }
+
 
     ////////////* QUIZ GAME EVENTS *////////////
 
@@ -124,7 +128,7 @@ public class EventHandler {
                 processScoreEvent(chatId, userId, true);
                 return;
             }
-            text += "\n" + PriceContainer.getPriceByQuestionNum(question.getNumberInTopic()) + " рублей ваши!";
+            text += "\n" + PriceContainer.getPriceByQuestionNum(QuestionCache.getCurrentQuestionNum(userId)) + " рублей ваши!";
             msgService.editMessageText(chatId, userId, text);
             msgService.editInlineMarkup(chatId, userId, menuService.getNextQuestionKeyboard());
         } else {
@@ -133,7 +137,7 @@ public class EventHandler {
     }
 
     ////////////* HINTS *////////////
-    public void processHintRequest(long chatId, long userId, Hint hint) throws TelegramApiException {
+    public void processHintRequest(long chatId, long userId, Hint hint) throws TelegramApiException, IllegalArgumentException {
         HintCache.decreaseHint(userId, hint);
         String text = "Вы выбрали подсказку \"" + HintContainer.getText(hint) + "\"." +
             "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint);

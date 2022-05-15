@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import javax.persistence.EntityManager;
 import java.util.List;
 
 @Slf4j
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TopicRepo {
     private final ITopicRepo topicRepo;
+    private final EntityManager entityManager;
 
     public Topic findTopicById(int topicId){
         log.info("Fetching topic with ID {}", topicId);
@@ -23,14 +25,15 @@ public class TopicRepo {
 
     public List<Topic> findAllTopics(){
         log.info("Fetching all topics");
-        return topicRepo.findAll();
+        List<Topic> result = topicRepo.findAll();
+        return result;
     }
 
-    public void saveTopic(Topic topic){
+    public Topic saveTopic(Topic topic){
         log.info("Saving topic {}", topic.getTopicId());
         for (Question question : topic.getQuestions()){
             question.setNumberInTopic(topic.getQuestions().indexOf(question) + 1);
         }
-        topicRepo.save(topic);
+        return topicRepo.save(topic);
     }
 }

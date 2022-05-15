@@ -29,7 +29,7 @@ public class HintCache { // map of users with all of their remaining hint option
         return hintCacheMap.get(userId).get(hint);
     }
 
-    public static void decreaseHint(long userId, Hint hint){
+    public static void decreaseHint(long userId, Hint hint) throws IllegalArgumentException {
         if (getRemainingHints(userId, hint) < 1)
             throw new IllegalArgumentException("Out of hints: " + hint.name());
         int prevHintNumber = hintCacheMap.get(userId).get(hint);
@@ -38,7 +38,8 @@ public class HintCache { // map of users with all of their remaining hint option
 
     public static void clearCache(long userId){
         log.info("Clearing hint cache for user {}", userId);
-        hintCacheMap.remove(userId);
+        if (hintCacheMap.containsKey(userId))
+            hintCacheMap.remove(userId);
     }
 
 }

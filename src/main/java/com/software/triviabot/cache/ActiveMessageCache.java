@@ -37,7 +37,9 @@ public class ActiveMessageCache {
 
     public static void clearCache(long userId) {
         log.info("Clearing active message cache for user {}", userId);
-        refreshMessageMap.remove(userId);
+        if (refreshMessageMap.containsKey(userId))
+            refreshMessageMap.remove(userId);
+        if (deleteMessageMap.containsKey(userId))
         deleteMessageMap.remove(userId);
     }
 }

@@ -25,6 +25,7 @@ public class StateCache { // Keeps current bot state for each user id
 
     public static void clearCache(long userId){
         log.info("Clearing state cache for user {}", userId);
-        stateMap.remove(userId);
+        if (stateMap.containsKey(userId))
+            stateMap.remove(userId);
     }
 }

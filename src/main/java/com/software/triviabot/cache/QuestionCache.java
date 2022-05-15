@@ -56,7 +56,9 @@ public class QuestionCache {
 
     public static void clearCache(Long userId) {
         log.info("Clearing question cache for user {}", userId);
-        currentQuestionMap.remove(userId);
-        currentTopicMap.remove(userId);
+        if (currentQuestionMap.containsKey(userId))
+            currentQuestionMap.remove(userId);
+        if (currentTopicMap.containsKey(userId))
+            currentTopicMap.remove(userId);
     }
 }

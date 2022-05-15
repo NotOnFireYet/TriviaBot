@@ -16,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ScoreRepo {
     private final IScoreRepo scoreRepo;
+    private final UserRepo userRepo;
     private final EntityManager entityManager;
 
     public List<Score> findScoresByUserId(long userId){
@@ -28,12 +29,14 @@ public class ScoreRepo {
     @Transactional
     public void deleteUserScores(long userId) {
         log.info("Deleting all scores of user {}", userId);
-        entityManager.createQuery(
-            "DELETE FROM Score s WHERE user_id=" + userId).executeUpdate();
+        if (userRepo.findUserById(userId) != null) {
+            entityManager.createQuery(
+                "DELETE FROM Score s WHERE user_id=" + userId).executeUpdate();
+        }
     }
 
-    public void saveScore(Score score){
+    public Score saveScore(Score score){
         log.info("Saving score {}", score.getScoreId());
-        scoreRepo.save(score);
+        return scoreRepo.save(score);
     }
 }

@@ -75,11 +75,12 @@ public class MenuService { // Constructs button layouts
         return inlineMarkup;
     }
 
-    public InlineKeyboardMarkup getTopicsMenu(){
+    public InlineKeyboardMarkup getTopicsMenu() throws NullPointerException {
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
         List<Topic> topics = topicRepo.findAllTopics();
         if (!topics.isEmpty()) {
+            log.info("Topics isn't empty");
             for (Topic topic : topics) {
                 InlineKeyboardButton button = new InlineKeyboardButton();
                 button.setText(topic.getTitle());
