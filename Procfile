@@ -1,1 +1,1 @@
-web: java -cp target/classes/:target/dependency/* com.software.triviabot.TriviabotApplication.java
+web: java -jar target/triviabot-1.0.jar
