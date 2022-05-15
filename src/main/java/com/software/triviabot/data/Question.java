@@ -18,9 +18,6 @@ public class Question {
     @Column(name="question_id")
     private int questionId;
 
-    @Column(nullable = false)
-    private int numberInTopic;
-
     @ManyToOne
     @JoinColumn(name="topic_id")
     private Topic topic;

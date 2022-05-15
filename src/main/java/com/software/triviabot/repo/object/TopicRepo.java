@@ -16,7 +16,6 @@ import java.util.List;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class TopicRepo {
     private final ITopicRepo topicRepo;
-    private final EntityManager entityManager;
 
     public Topic findTopicById(int topicId){
         log.info("Fetching topic with ID {}", topicId);
@@ -31,9 +30,6 @@ public class TopicRepo {
 
     public Topic saveTopic(Topic topic){
         log.info("Saving topic {}", topic.getTopicId());
-        for (Question question : topic.getQuestions()){
-            question.setNumberInTopic(topic.getQuestions().indexOf(question) + 1);
-        }
         return topicRepo.save(topic);
     }
 }

@@ -21,7 +21,6 @@ public class Topic {
     @Column(length = 100)
     private String title;
 
-    @Column(unique=true)
     @OneToMany(mappedBy="topic", cascade = CascadeType.ALL,
         fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Question> questions;
