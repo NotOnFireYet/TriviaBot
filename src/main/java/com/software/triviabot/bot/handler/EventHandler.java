@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
@@ -51,10 +53,34 @@ public class EventHandler {
         return msgService.buildMessage(chatId, "Здравствуйте, " + name + "!");
     }
 
-    public SendMessage getChooseTopicMessage(long chatId) throws NullPointerException {
+
+    public SendMessage getWelcomeBackMessage(long chatId, long userId) {
+        User user = userRepo.findUserById(userId);
+        return msgService.buildMessage(chatId, "С возвращением, " + user.getName() + "!");
+    }
+
+    public SendMessage getChooseTopicMessage(long chatId, long userId) throws NullPointerException, TelegramApiException {
+        sendWishingLuckMessage(chatId, userId); // message that clears reply keyboard
+
         SendMessage message = msgService.buildMessage(chatId, "Выберите тему, чтобы начать викторину.");
         message.setReplyMarkup(menuService.getTopicsMenu());
         return message;
+    }
+
+    public void sendWishingLuckMessage(long chatId, long userId) throws TelegramApiException {
+        List<Score> scores = scoreRepo.findScoresByUserId(userId);
+        String text;
+        if (!scores.isEmpty()) {
+            boolean isLastWin = scores.get(scores.size() - 1).isSuccessful(); // see if the user's last try was a win
+            text = isLastWin ? "За новыми победами!" : "В этот раз повезет ;)";
+        } else {
+            text = "Желаем удачи!";
+        }
+        SendMessage greetMessage = msgService.buildMessage(chatId, text);
+        ReplyKeyboardRemove remove = new ReplyKeyboardRemove();
+        remove.setRemoveKeyboard(true);
+        greetMessage.setReplyMarkup(remove);
+        sender.send(greetMessage);
     }
 
     public SendMessage getRulesMessage(long chatId){
@@ -68,8 +94,7 @@ public class EventHandler {
             "</b>\n бот покажет, как на этот вопрос впервые ответил рандомный пользователь\n\n" +
             "<b>" + HintContainer.getText(Hint.AUDIENCE_HELP) +
             "</b>\n бот выберет 10 рандомных пользователей и покажет статистику их ответов на этот вопрос\n\n"+
-            "Каждую подсказку можно использовать 2 раза за игру.\n" +
-            "Желаем удачи!";
+            "Каждую подсказку можно использовать 2 раза за игру.";
         return msgService.buildMessage(chatId, rules);
     }
 
@@ -93,7 +118,8 @@ public class EventHandler {
     }
 
     public SendMessage getNoTopicsMessage(long chatId) {
-        return msgService.buildMessage(chatId, "Темы временно отсутствуют. Приносим извинения :(");
+        return msgService.buildMessage(chatId, "Темы временно отсутствуют. Приносим извинения :(" +
+            "\nПопробуйте позже (команда /start).");
     }
 
 
@@ -152,21 +178,16 @@ public class EventHandler {
 
     // seeing how another random user answered the same question
     public void processCallFriendRequest(long chatId, long userId, Question question) throws TelegramApiException {
-        User user = userRepo.getRandomUserExcluding(userId);
-        String text;
-        InlineKeyboardMarkup keyboard;
-        if (user == null){
-            text = "Удивительно, но вы первыми столкнулись с этим вопросом. Поздравляем? \uD83E\uDD28" + //raised eyebrow emoji
-                "\nВы увидите подсказку \"50/50\" за счет этой.";
-            keyboard = menuService.getHintOkKeyboard(Hint.FIFTY_FIFTY);
+        QuestionStat stat = statRepo.getRandomByQuestionId(question.getQuestionId());
+        if (stat == null){
+            editNoHintDataMessage(chatId, userId);
         } else {
-            QuestionStat stat = statRepo.getByUserAndQuestionId(user.getUserId(), question.getQuestionId());
-            text = "Первая догадка случайного пользователя:\n" + stat.getAnswer().getText()
+            String text = "Первая догадка случайного пользователя:\n" + stat.getAnswer().getText()
             + "\n\n" + questionEmoji + question.getText();
-            keyboard =  menuService.getQuestionKeyboard(question.getAnswers());
+            InlineKeyboardMarkup keyboard =  menuService.getQuestionKeyboard(question.getAnswers());
+            msgService.editMessageText(chatId, userId, text);
+            msgService.editInlineMarkup(chatId, userId, keyboard);
         }
-        msgService.editMessageText(chatId, userId, text);
-        msgService.editInlineMarkup(chatId, userId, keyboard);
     }
 
     public void processAudienceHelpRequest(long chatId, long userId, Question question) throws TelegramApiException {
@@ -221,10 +242,10 @@ public class EventHandler {
         sender.send(tryAgainMessage);
     }
 
-    private void sendScoreMessage(long chatId, long userId, int wonMoney, boolean isSuccessful) throws TelegramApiException {
+    public void sendScoreMessage(long chatId, long userId, int wonMoney, boolean isSuccessful) throws TelegramApiException {
         String text;
         if (isSuccessful){
-            text = "Вопросы закончены! Миллион рублей ваши!";
+            text = "Вопросы закончены! Поздравляем с победой - миллион рублей ваши \uD83C\uDF89"; // party hat emoji
             sender.send(msgService.buildMessage(chatId, text));
         } else {
             int lostMoney = 1000000 - wonMoney;
@@ -267,7 +288,7 @@ public class EventHandler {
 
     ////////////* UTILITY *////////////
 
-    public void editNoHintDataMessage(long chatId, long userId) throws TelegramApiException {
+    private void editNoHintDataMessage(long chatId, long userId) throws TelegramApiException {
         String text = "Удивительно, но вы первыми столкнулись с этим вопросом. Поздравляем? \uD83E\uDD28" + //raised eyebrow emoji
             "\nВы увидите подсказку \"50/50\" за счет этой.";
         InlineKeyboardMarkup keyboard = menuService.getHintOkKeyboard(Hint.FIFTY_FIFTY);

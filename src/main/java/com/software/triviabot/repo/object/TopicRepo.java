@@ -1,6 +1,5 @@
 package com.software.triviabot.repo.object;
 
-import com.software.triviabot.data.Question;
 import com.software.triviabot.data.Topic;
 import com.software.triviabot.repo.ITopicRepo;
 import lombok.RequiredArgsConstructor;
@@ -8,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import javax.persistence.EntityManager;
 import java.util.List;
 
 @Slf4j

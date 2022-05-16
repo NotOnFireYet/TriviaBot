@@ -19,20 +19,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class QuestionStatService {
     private final QuestionStatsRepo statsRepo;
-    private final int statLimit = 20;
+    private final int statLimit = 10;
 
     public List<Integer> getAnswerPercents(long userId, Question question){
         List<Answer> answers = new ArrayList<>(question.getAnswers());
         List<QuestionStat> stats = statsRepo.getAllStatsForQuestion(question.getQuestionId(), userId);
-        Collections.shuffle(stats);
-        List<QuestionStat> tenStats = stats // get up to 10 elements from shuffled stats
+        Collections.shuffle(stats); // randomize stats
+        List<QuestionStat> tenStats = stats // get up to 10 elements from stats
             .stream()
             .limit(statLimit)
             .collect(Collectors.toList());
-        if (!stats.isEmpty())
-            return calculatePercents(answers, tenStats);
-        else
-            return new ArrayList<>();
+
+        return !tenStats.isEmpty() ? calculatePercents(answers, tenStats) : new ArrayList<>();
     }
 
     private List<Integer> calculatePercents(List<Answer> answers, List<QuestionStat> stats) {
@@ -47,7 +45,7 @@ public class QuestionStatService {
             sum += (int)result;
 
             // if in the end the sum of percents != 100, adjust
-            if (sum != 100 && answers.indexOf(answer) == answers.size() - 1){
+            if (answers.indexOf(answer) == answers.size() - 1 && sum != 100){
                 int difference = Math.abs(100 - sum);
                 result = Math.abs(result - difference); // using abs in case result is 0
             }

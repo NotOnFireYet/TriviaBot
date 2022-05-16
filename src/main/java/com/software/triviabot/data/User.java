@@ -24,6 +24,6 @@ public class User {
     private String name;
 
     @OneToMany(mappedBy="user", cascade = CascadeType.ALL,
-        fetch = FetchType.LAZY, orphanRemoval = true)
+        fetch = FetchType.LAZY)
     private List<Score> scores;
 }

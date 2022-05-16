@@ -43,7 +43,7 @@ public class UpdateHandler {
         return null;
     }
 
-    private BotApiMethod<?> handleInputMessage(Message message) throws TelegramApiException {
+    private BotApiMethod<?> handleInputMessage(Message message) throws TelegramApiException, IllegalArgumentException {
         long userId = message.getFrom().getId();
         long chatId = message.getChatId();
         String input = message.getText();
@@ -97,26 +97,24 @@ public class UpdateHandler {
         }
     }
 
-    private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message){
+    private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message) throws TelegramApiException {
         StateCache.setState(userId, State.START);
         if (!userRepo.exists(userId)){
             userRepo.saveNewUser(userId, message.getFrom().getUserName());
+            StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
+            return eventHandler.getIntroMessage(chatId);
         }
-        StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
-        return eventHandler.getIntroMessage(chatId);
+
+        sender.send(eventHandler.getWelcomeBackMessage(chatId, userId));
+        sendTopicOptions(chatId, userId);
+        return null;
     }
 
     private BotApiMethod<?> handleEnteredName(long chatId, long userId, Message message) throws TelegramApiException {
         StateCache.setState(userId, State.START);
         sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
         sender.send(eventHandler.getRulesMessage(chatId));
-        try {
-            Message response = sender.send(eventHandler.getChooseTopicMessage(chatId));
-            ActiveMessageCache.setDeleteMessage(userId, response);
-        } catch (NullPointerException e) {
-            sender.send(eventHandler.getNoTopicsMessage(chatId));
-            eventHandler.deleteUserData(userId);
-        }
+        sendTopicOptions(chatId, userId);
         return null;
     }
 
@@ -125,8 +123,7 @@ public class UpdateHandler {
         switch (input) {
             case "Начать викторину":
                 StateCache.setState(userId, State.FIRSTQUESTION);
-                Message response = sender.send(eventHandler.getChooseTopicMessage(chatId));
-                ActiveMessageCache.setDeleteMessage(userId, response);
+                sendTopicOptions(chatId, userId);
                 return null;
 
             case "Напомнить правила":
@@ -137,12 +134,22 @@ public class UpdateHandler {
 
             case "Удалить мои данные":
                 StateCache.setState(userId, State.DELETEALL);
-                response = sender.send(eventHandler.getDeleteDataMessage(chatId));
+                Message response = sender.send(eventHandler.getDeleteDataMessage(chatId));
                 ActiveMessageCache.setDeleteMessage(userId, response);
                 return null;
 
             default:
                 return nonCommandHandler.handle(message);
+        }
+    }
+
+    private void sendTopicOptions(long chatId, long userId) throws TelegramApiException {
+        try {
+            Message response = sender.send(eventHandler.getChooseTopicMessage(chatId, userId));
+            ActiveMessageCache.setDeleteMessage(userId, response);
+        } catch (NullPointerException | TelegramApiException e) {
+            sender.send(eventHandler.getNoTopicsMessage(chatId));
+            StateCache.setState(userId, State.IGNORE);
         }
     }
 }

@@ -50,7 +50,7 @@ public class CallbackQueryHandler {
             if (topic.getQuestions().isEmpty()) {
                 eventHandler.handleNoQuestions(chatId);
                 StateCache.setState(userId, State.START);
-                Message response = sender.send(eventHandler.getChooseTopicMessage(chatId));
+                Message response = sender.send(eventHandler.getChooseTopicMessage(chatId, userId));
                 ActiveMessageCache.setDeleteMessage(userId, response);
                 return null;
             }

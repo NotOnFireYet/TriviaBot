@@ -80,7 +80,6 @@ public class MenuService { // Constructs button layouts
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
         List<Topic> topics = topicRepo.findAllTopics();
         if (!topics.isEmpty()) {
-            log.info("Topics isn't empty");
             for (Topic topic : topics) {
                 InlineKeyboardButton button = new InlineKeyboardButton();
                 button.setText(topic.getTitle());

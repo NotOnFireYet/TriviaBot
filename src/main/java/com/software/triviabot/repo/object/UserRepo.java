@@ -23,11 +23,6 @@ public class UserRepo {
         return userRepo.getById(userId);
     }
 
-    public List<User> findAllUsers(){
-        log.info("Fetching all users");
-        return userRepo.findAll();
-    }
-
     public Boolean exists(long userId){
         log.info("Checking if user {} exists", userId);
         return userRepo.existsById(userId);
@@ -40,13 +35,6 @@ public class UserRepo {
         newScores.add(score);
         user.setScores(newScores);
         userRepo.save(user);
-    }
-
-    public User getRandomUserExcluding(long userId){
-        List<User> list = entityManager.createQuery(
-            "SELECT u FROM User u" + " WHERE NOT user_id=" + userId +
-                " ORDER BY RAND()").getResultList();
-        return !list.isEmpty() ? list.get(0) : null;
     }
 
     public void saveNameToUser(long userId, String name){
