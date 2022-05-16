@@ -54,7 +54,7 @@ public class EventHandler {
     }
 
     public BotApiMethod<?> getNameTooLongMessage(long chatId, int nameLength) {
-        return msgService.buildMessage(chatId, "Имя не должно превышать " + nameLength + "символов!");
+        return msgService.buildMessage(chatId, "Имя не должно превышать " + nameLength + " символов!");
     }
 
     public SendMessage getWelcomeBackMessage(long chatId, long userId) {
