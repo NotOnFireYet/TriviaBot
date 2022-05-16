@@ -22,9 +22,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -53,6 +53,9 @@ public class EventHandler {
         return msgService.buildMessage(chatId, "Здравствуйте, " + name + "!");
     }
 
+    public BotApiMethod<?> getNameTooLongMessage(long chatId, int nameLength) {
+        return msgService.buildMessage(chatId, "Имя не должно превышать " + nameLength + "символов!");
+    }
 
     public SendMessage getWelcomeBackMessage(long chatId, long userId) {
         User user = userRepo.findUserById(userId);

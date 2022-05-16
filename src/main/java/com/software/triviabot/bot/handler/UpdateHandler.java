@@ -30,6 +30,8 @@ public class UpdateHandler {
     private final MessageService msgService;
     private final UserRepo userRepo;
 
+    private static final int nameLength = 30;
+
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
@@ -112,6 +114,11 @@ public class UpdateHandler {
 
     private BotApiMethod<?> handleEnteredName(long chatId, long userId, Message message) throws TelegramApiException {
         StateCache.setState(userId, State.START);
+        String name = message.getText();
+        if (name.length() > nameLength){
+            StateCache.setState(userId, State.ENTERNAME);
+            return eventHandler.getNameTooLongMessage(chatId, nameLength);
+        }
         sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
         sender.send(eventHandler.getRulesMessage(chatId));
         sendTopicOptions(chatId, userId);
