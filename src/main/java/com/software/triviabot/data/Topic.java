@@ -26,6 +26,10 @@ public class Topic {
     private List<Question> questions;
 
     public Question getQuestionByNumber(int num){
-        return questions.get(num - 1);
+        for (Question q : this.questions) {
+            if (q.getNumberInTopic() == num)
+                return q;
+        }
+        return null;
     }
 }

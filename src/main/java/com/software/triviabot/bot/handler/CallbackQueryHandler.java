@@ -7,10 +7,7 @@ import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.data.*;
 import com.software.triviabot.enums.State;
-import com.software.triviabot.repo.object.AnswerRepo;
-import com.software.triviabot.repo.object.QuestionStatsRepo;
-import com.software.triviabot.repo.object.TopicRepo;
-import com.software.triviabot.repo.object.UserRepo;
+import com.software.triviabot.repo.object.*;
 import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +42,7 @@ public class CallbackQueryHandler {
             String topicIdString = data.replace("TopicCallback", "");
             int topicId = Integer.parseInt(topicIdString);
             Topic topic = topicRepo.findTopicById(topicId);
-            QuestionCache.setUpCache(userId, topicRepo.findTopicById(topicId));
+            QuestionCache.setUpCache(userId, topic);
 
             if (topic.getQuestions().isEmpty()) {
                 eventHandler.handleNoQuestions(chatId);

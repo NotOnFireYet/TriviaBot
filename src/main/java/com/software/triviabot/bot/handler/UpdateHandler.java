@@ -2,8 +2,11 @@ package com.software.triviabot.bot.handler;
 
 import com.software.triviabot.bot.ReplySender;
 import com.software.triviabot.cache.ActiveMessageCache;
+import com.software.triviabot.cache.HintCache;
+import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.HintContainer;
+import com.software.triviabot.data.Question;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.object.UserRepo;
@@ -87,8 +90,26 @@ public class UpdateHandler {
             StateCache.setState(userId, State.GIVEHINT);
             msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
             Hint hint = HintContainer.getHintByText(message.getText());
+            Question question = QuestionCache.getCurrentQuestion(userId);
             try {
-                eventHandler.processHintRequest(chatId, userId, hint);
+                StateCache.setState(userId, State.GAMEPROCESS);
+                HintCache.decreaseHint(userId, hint);
+                switch (hint) {
+                    case FIFTY_FIFTY:
+                        eventHandler.processFiftyFiftyRequest(chatId, userId, question);
+                        break;
+
+                    case CALL_FRIEND:
+                        eventHandler.processCallFriendRequest(chatId, userId, question);
+                        break;
+
+                    case AUDIENCE_HELP:
+                        eventHandler.processAudienceHelpRequest(chatId, userId, question);
+                        break;
+
+                    default:
+                        log.error("Unknown hint value: {}", hint.name());
+                }
             } catch (IllegalArgumentException e) {
                 log.error(e.getMessage());
                 eventHandler.handleNoMoreHints(chatId, userId);

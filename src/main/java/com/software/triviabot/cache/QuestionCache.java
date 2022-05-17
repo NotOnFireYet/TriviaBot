@@ -5,6 +5,7 @@ import com.software.triviabot.data.Topic;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.validation.constraints.Null;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,9 +26,15 @@ public class QuestionCache {
         log.info("Current topic for user {}: {}", userId, topic.getTopicId());
     }
 
-    public static Question getCurrentQuestion(long userId){
+    public static Question getCurrentQuestion(long userId) throws NullPointerException {
+        int num = currentQuestionMap.get(userId);
         Topic topic = currentTopicMap.get(userId);
-        return topic.getQuestionByNumber(currentQuestionMap.get(userId));
+        Question question = topic.getQuestionByNumber(num);
+        if (question == null) {
+            log.error("There is no question #{} in topic {}", num, topic.getTopicId());
+            throw new NullPointerException("No such question exists");
+        }
+        return question;
     }
 
     public static Topic getCurrentTopic(long userId){

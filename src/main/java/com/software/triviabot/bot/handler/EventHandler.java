@@ -97,7 +97,7 @@ public class EventHandler {
             "</b>\n бот покажет, как на этот вопрос впервые ответил рандомный пользователь\n\n" +
             "<b>" + HintContainer.getText(Hint.AUDIENCE_HELP) +
             "</b>\n бот выберет 10 рандомных пользователей и покажет статистику их ответов на этот вопрос\n\n"+
-            "Каждую подсказку можно использовать 2 раза за игру.";
+            "Каждую подсказку можно использовать 1 раз за игру.";
         return msgService.buildMessage(chatId, rules);
     }
 
@@ -166,14 +166,6 @@ public class EventHandler {
     }
 
     ////////////* HINTS *////////////
-    public void processHintRequest(long chatId, long userId, Hint hint) throws TelegramApiException, IllegalArgumentException {
-        HintCache.decreaseHint(userId, hint);
-        String text = "Вы выбрали подсказку \"" + HintContainer.getText(hint) + "\"." +
-            "\nОсталось таких подсказок: " + HintCache.getRemainingHints(userId, hint);
-        msgService.editMessageText(chatId, userId, text);
-        msgService.editInlineMarkup(chatId, userId, menuService.getHintOkKeyboard(hint));
-    }
-
     public void handleNoMoreHints(long chatId, long userId) throws TelegramApiException {
         msgService.editMessageText(chatId, userId, "Это подсказка закончилась :(");
         msgService.editInlineMarkup(chatId, userId, menuService.getNoHintsOkKeyboard());

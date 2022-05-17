@@ -28,6 +28,8 @@ public class Question {
     @Column(unique=true, length = 500)
     private String correctAnswerReaction;
 
+    private int numberInTopic;
+
     @Column(unique=true)
     @OneToMany(mappedBy="question", cascade = CascadeType.ALL,
         fetch = FetchType.EAGER, orphanRemoval = true)
