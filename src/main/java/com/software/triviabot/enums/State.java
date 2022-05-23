@@ -2,7 +2,6 @@ package com.software.triviabot.enums;
 
 
 public enum State {
-    IGNORE, // pre-interaction, before /start is invoked
     START, // interaction up until topics menu
     ENTERNAME, // accepting name input
 
@@ -12,6 +11,6 @@ public enum State {
     GIVEHINT, // accepting hint request
 
     DELETEALL, // delete all messages including commands
+    PREGAME, // before /start is invoked & after user data deletion
     SCORE, // main menu after game
-    DELETEDATA // user requested to delete their data
 }

@@ -106,7 +106,11 @@ public class EventHandler {
             "Здесь вам предстоит попробовать свои силы в игре:" +
             " \"Кто хочет стать миллионером\"! \n" +
             "Пожалуйста, представьтесь:";
-        return msgService.buildMessage(chatId, text);
+        SendMessage message = msgService.buildMessage(chatId, text);
+        ReplyKeyboardRemove remove = new ReplyKeyboardRemove();
+        remove.setRemoveKeyboard(true);
+        message.setReplyMarkup(remove);
+        return message;
     }
 
     public SendMessage getKeyboardSwitchMessage(long chatId){
@@ -261,7 +265,8 @@ public class EventHandler {
         User user = userRepo.findUserById(userId);
         String text = user.getName() + " | @" + user.getUsername()
             + "\n\n\uD83D\uDCC8<b> Всего игр:</b> " + numOfTries // graph emoji
-            + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>" + // trophy emoji
+            + "\n\n\uD83C\uDFC6<b> Побед:</b> " + numOfWins + "<i> (" + (int)winPercentage + "%)</i>"  // trophy emoji
+            + "\n\n\uD83D\uDE13<b> Поражений:</b> " + (numOfTries - numOfWins) +
             "\n\n\uD83D\uDCB8<b> Выиграно</b>: " + totalMoney + "р."; // money stack with wings emoji
         return msgService.buildMessage(chatId, text);
     }
@@ -280,6 +285,14 @@ public class EventHandler {
         scoreRepo.deleteUserScores(userId);
         statRepo.deleteAllUserStats(userId);
         userRepo.deleteUser(userRepo.findUserById(userId));
+    }
+
+    public SendMessage getGoodbyeMessage(long chatId) {
+        String text = "Данные успешно стерты. До скорых встреч, незнакомец! \uD83D\uDC4B" + // waving hand emoji
+            "\nЕсли захотите начать заново, просто нажмите \"Запустить\".";
+        SendMessage message = msgService.buildMessage(chatId, text);
+        message.setReplyMarkup(menuService.getGoodbyeKeyboard());
+        return message;
     }
 
     ////////////* UTILITY *////////////

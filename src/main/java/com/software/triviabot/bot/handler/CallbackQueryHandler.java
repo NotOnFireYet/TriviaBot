@@ -97,12 +97,10 @@ public class CallbackQueryHandler {
                 break;
 
             case "DeleteDataCallback":
-                StateCache.setState(userId, State.IGNORE);
+                StateCache.setState(userId, State.PREGAME);
                 msgService.deleteCachedMessage(chatId, userId);
                 eventHandler.deleteUserData(userId);
-                String text = "Данные успешно стерты. До скорых встреч, незнакомец! \uD83D\uDC4B" + // waving hand emoji
-                    "\nЕсли захотите начать заново, просто напишите /start.";
-                return msgService.buildMessage(chatId, text);
+                return eventHandler.getGoodbyeMessage(chatId);
 
             case "GoBackCallback":
                 StateCache.setState(userId, State.SCORE);

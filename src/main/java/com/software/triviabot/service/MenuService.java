@@ -75,6 +75,10 @@ public class MenuService { // Constructs button layouts
         return inlineMarkup;
     }
 
+    public ReplyKeyboard getGoodbyeKeyboard() {
+        return getOneButtonReplyKeyboard("Запустить");
+    }
+
     public InlineKeyboardMarkup getTopicsMenu() throws NullPointerException {
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
@@ -173,5 +177,17 @@ public class MenuService { // Constructs button layouts
 
         inlineKeyboardMarkup.setKeyboard(rowList);
         return inlineKeyboardMarkup;
+    }
+
+    private ReplyKeyboardMarkup getOneButtonReplyKeyboard(String text) {
+        ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+        replyKeyboardMarkup.setSelective(true);
+        replyKeyboardMarkup.setResizeKeyboard(true);
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(new KeyboardButton(text));
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        keyboard.add(row1);
+        replyKeyboardMarkup.setKeyboard(keyboard);
+        return replyKeyboardMarkup;
     }
 }

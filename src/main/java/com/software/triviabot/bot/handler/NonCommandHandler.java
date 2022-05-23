@@ -23,7 +23,7 @@ public class NonCommandHandler {
         long chatId = message.getChatId();
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(String.valueOf(chatId));
-        State state = StateCache.getState(userId) == null ? State.IGNORE : StateCache.getState(userId);
+        State state = StateCache.getState(userId) == null ? State.PREGAME : StateCache.getState(userId);
 
         switch (state) {
             case FIRSTQUESTION:
@@ -34,7 +34,7 @@ public class NonCommandHandler {
                 msgService.deleteUserMessage(chatId, message.getMessageId()); // delete all non-command messages
                 return null;
 
-            case IGNORE:
+            case PREGAME:
             case START:
             case SCORE:
                 return null; // ignore all non-command messages

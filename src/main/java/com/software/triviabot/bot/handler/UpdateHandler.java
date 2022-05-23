@@ -40,7 +40,7 @@ public class UpdateHandler {
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
             state = StateCache.getState(callbackQuery.getFrom().getId());
-            if (state == null || state == State.IGNORE) {
+            if (state == null || state == State.PREGAME) {
                 return null;
             }
             return callbackQueryHandler.processCallbackQuery(callbackQuery);
@@ -48,7 +48,8 @@ public class UpdateHandler {
             Message message = update.getMessage();
             if (message != null && message.hasText()) {
                 state = StateCache.getState(message.getFrom().getId());
-                if ((state == null || state == State.IGNORE) && !message.getText().equals("/start")) { // todo: doesn't work!!
+                if ((state == null || state == State.PREGAME) && ! (message.getText().equals("/start") ||
+                    message.getText().equals("Запустить"))) { // todo: doesn't work!!
                     return null;
                 }
                 return handleInputMessage(message);
@@ -64,7 +65,7 @@ public class UpdateHandler {
         State state = StateCache.getState(userId);
 
         if (state == null) {
-            if(input.equals("/start"))
+            if(input.equals("/start") || input.equals("Запустить"))
                 return handleStartCommand(chatId, userId, message);
         } else {
             switch (state) {
@@ -186,7 +187,7 @@ public class UpdateHandler {
             ActiveMessageCache.setDeleteMessage(userId, response);
         } catch (NullPointerException | TelegramApiException e) {
             sender.send(eventHandler.getNoTopicsMessage(chatId));
-            StateCache.setState(userId, State.IGNORE);
+            StateCache.setState(userId, State.PREGAME);
         }
     }
 }
