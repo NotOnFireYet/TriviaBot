@@ -5,7 +5,7 @@ import com.software.triviabot.cache.ActiveMessageCache;
 import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
-import com.software.triviabot.data.*;
+import com.software.triviabot.model.*;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.object.*;
 import com.software.triviabot.service.MessageService;
@@ -85,6 +85,11 @@ public class CallbackQueryHandler {
                 eventHandler.updateQuestion(chatId, userId);
                 break;
 
+            case "ReplacementHintCallback":
+                StateCache.setState(userId, State.GAMEPROCESS);
+                eventHandler.processFiftyFiftyRequest(chatId, userId, question);
+                break;
+
             case "NoHintsCallback":
                 StateCache.setState(userId, State.GAMEPROCESS);
                 QuestionCache.decreaseQuestionNum(userId);
@@ -102,21 +107,6 @@ public class CallbackQueryHandler {
             case "GoBackCallback":
                 StateCache.setState(userId, State.SCORE);
                 msgService.deleteCachedMessage(chatId, userId);
-                break;
-
-            case "FIFTY_FIFTY_Ok":
-                StateCache.setState(userId, State.GAMEPROCESS);
-                eventHandler.processFiftyFiftyRequest(chatId, userId, question);
-                break;
-
-            case "CALL_FRIEND_Ok":
-                StateCache.setState(userId, State.GAMEPROCESS);
-                eventHandler.processCallFriendRequest(chatId, userId, question);
-                break;
-
-            case "AUDIENCE_HELP_Ok":
-                StateCache.setState(userId, State.GAMEPROCESS);
-                eventHandler.processAudienceHelpRequest(chatId, userId, question);
                 break;
 
             default:

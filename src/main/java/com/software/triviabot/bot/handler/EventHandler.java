@@ -8,7 +8,7 @@ import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.FailMessageContainer;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.container.PriceContainer;
-import com.software.triviabot.data.*;
+import com.software.triviabot.model.*;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
@@ -177,11 +177,16 @@ public class EventHandler {
         if (stat == null){
             editNoHintDataMessage(chatId, userId);
         } else {
-            String text = "Первая догадка случайного пользователя:\n" + stat.getAnswer().getText()
-            + "\n\n" + questionEmoji + question.getText();
+            List<Answer> answers = question.getAnswers();
+            for (Answer answer : answers) {
+                if (answer.equals(stat.getAnswer()))
+                    answer.setText(answer.getText() + " | выбор друга");
+            }
+            String text = questionEmoji + question.getText();
             InlineKeyboardMarkup keyboard =  menuService.getQuestionKeyboard(question.getAnswers());
             msgService.editMessageText(chatId, userId, text);
             msgService.editInlineMarkup(chatId, userId, keyboard);
+            resetAnswerTexts(answers);
         }
     }
 
@@ -194,11 +199,7 @@ public class EventHandler {
             InlineKeyboardMarkup keyboard = menuService.getQuestionKeyboard(answers);
             msgService.editMessageText(chatId, userId, text);
             msgService.editInlineMarkup(chatId, userId, keyboard);
-
-            for (Answer answer : answers) { // resetting answer texts
-                String answerText = answer.getText();
-                answer.setText(answerText.substring(0, answerText.indexOf("|")));
-            }
+            resetAnswerTexts(answers);
         } else {
             editNoHintDataMessage(chatId, userId);
         }
@@ -286,7 +287,7 @@ public class EventHandler {
     private void editNoHintDataMessage(long chatId, long userId) throws TelegramApiException {
         String text = "Удивительно, но вы первыми столкнулись с этим вопросом. Поздравляем? \uD83E\uDD28" + //raised eyebrow emoji
             "\nВы увидите подсказку \"50/50\" за счет этой.";
-        InlineKeyboardMarkup keyboard = menuService.getHintOkKeyboard(Hint.FIFTY_FIFTY);
+        InlineKeyboardMarkup keyboard = menuService.getReplacementHintOk();
         msgService.editMessageText(chatId, userId, text);
         msgService.editInlineMarkup(chatId, userId, keyboard);
     }
@@ -299,6 +300,14 @@ public class EventHandler {
             String answerText = answer.getText();
             answerText += " | " + answer.getPercentPicked() + "%";
             answer.setText(answerText);
+        }
+    }
+
+    private void resetAnswerTexts(List<Answer> answers) {
+        for (Answer answer : answers) {
+            String answerText = answer.getText();
+            if (answerText.contains("|"))
+                answer.setText(answerText.substring(0, answerText.indexOf("|")));
         }
     }
 }

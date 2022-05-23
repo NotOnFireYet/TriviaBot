@@ -1,4 +1,4 @@
-package com.software.triviabot.data;
+package com.software.triviabot.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

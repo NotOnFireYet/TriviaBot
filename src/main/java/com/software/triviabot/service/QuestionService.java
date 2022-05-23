@@ -1,8 +1,8 @@
 package com.software.triviabot.service;
 
-import com.software.triviabot.data.Answer;
-import com.software.triviabot.data.Question;
-import com.software.triviabot.data.Topic;
+import com.software.triviabot.model.Answer;
+import com.software.triviabot.model.Question;
+import com.software.triviabot.model.Topic;
 import com.software.triviabot.repo.object.TopicRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -119,8 +119,7 @@ public class QuestionService {
             createQuestion(topic, "А почему наш мозг уменьшается?",
                 "Верно! На самом деле, еще не нашли точной причины, " +
                     "но есть хорошие предположения. Возможно, то, на что нам нужен был мозг побольше, " +
-                    "мы теперь записываем, узнаем от других и делаем с их помощью." +
-                    "Эволюция их не тронула, потому что они уже идеальны.",
+                    "мы теперь записываем, узнаем от других и делаем с их помощью.",
                 Arrays.asList("письменность", "разделение труда", "работа в команде", "все вышеперечисленное"),
                 "все вышеперечисленное"),
 

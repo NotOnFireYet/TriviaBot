@@ -1,9 +1,9 @@
 package com.software.triviabot.service;
 
-import com.software.triviabot.data.Topic;
+import com.software.triviabot.model.Topic;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.container.HintContainer;
-import com.software.triviabot.data.Answer;
+import com.software.triviabot.model.Answer;
 import com.software.triviabot.repo.object.TopicRepo;
 import com.software.triviabot.repo.object.UserRepo;
 import lombok.Getter;
@@ -131,8 +131,8 @@ public class MenuService { // Constructs button layouts
         return getOneButtonInlineKeyboard("Понятно", "NoHintsCallback");
     }
 
-    public InlineKeyboardMarkup getHintOkKeyboard(Hint hint){
-        return getOneButtonInlineKeyboard("Понятно", hint.name() + "_Ok");
+    public InlineKeyboardMarkup getReplacementHintOk(){
+        return getOneButtonInlineKeyboard("Понятно", "ReplacementHintCallback");
     }
 
 

@@ -1,4 +1,4 @@
-package com.software.triviabot.data;
+package com.software.triviabot.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,15 +37,23 @@ public class Question {
 
     @Override
     public boolean equals(Object o) {
-        if (o == this) {
+        if (this == o) {
             return true;
         }
-        if (!(o instanceof Question)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
-        Question q = (Question)o;
-        return this.questionId == q.getQuestionId();
+        Question question = (Question) o;
+        if (!getTopic().equals(question.getTopic()))
+            return false;
+
+        if (!getCorrectAnswerReaction().equals(question.getCorrectAnswerReaction())) {
+            return false;
+        }
+        return getText() != null
+            ? getText().equals(question.getText())
+            : question.getText() == null;
     }
 
     @Override

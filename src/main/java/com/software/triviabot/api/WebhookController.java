@@ -1,6 +1,8 @@
 package com.software.triviabot.api;
 
 import com.software.triviabot.bot.Bot;
+import com.software.triviabot.cache.StateCache;
+import com.software.triviabot.enums.State;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;

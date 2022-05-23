@@ -1,4 +1,4 @@
-package com.software.triviabot.data;
+package com.software.triviabot.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,5 +33,26 @@ public class Answer {
     public String toString() {
         return "{answerId=" + this.getAnswerId() + ", questionId=" + this.question.getQuestionId()
             + ", text=" + this.text + ", isCorrect="  + this.isCorrect + "}";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        Answer answer = (Answer) o;
+        if (!getQuestion().equals(answer.getQuestion()))
+            return false;
+
+        if (getIsCorrect() != answer.getIsCorrect()) {
+            return false;
+        }
+        return getText() != null
+            ? getText().equals(answer.getText())
+            : answer.getText() == null;
     }
 }

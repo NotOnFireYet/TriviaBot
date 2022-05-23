@@ -1,6 +1,6 @@
 package com.software.triviabot.repo.object;
 
-import com.software.triviabot.data.Score;
+import com.software.triviabot.model.Score;
 import com.software.triviabot.repo.IScoreRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +36,7 @@ public class ScoreRepo {
     }
 
     public Score saveScore(Score score){
-        log.info("Saving score {}", score.getScoreId());
+        log.info("Saving score {}", score.getAnsweredQuestions());
         return scoreRepo.save(score);
     }
 }

@@ -1,8 +1,8 @@
 package com.software.triviabot.service;
 
-import com.software.triviabot.data.Answer;
-import com.software.triviabot.data.Question;
-import com.software.triviabot.data.QuestionStat;
+import com.software.triviabot.model.Answer;
+import com.software.triviabot.model.Question;
+import com.software.triviabot.model.QuestionStat;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

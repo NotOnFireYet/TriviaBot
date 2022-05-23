@@ -16,10 +16,16 @@
 	<properties>
 		<java.version>11</java.version>
 		<telegram.version>6.0.1</telegram.version>
+
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
+
+		<flyway.user>tvlfrlvhztuxdj</flyway.user>
+		<flyway.password>f36014130bca2fef367ef711518a027711c0fe1f233b8d1fd550a03deb7ec0a0</flyway.password>
+		<flyway.schemas>public</flyway.schemas>
 	</properties>
 	<dependencies>
 		<!-- Spring -->
@@ -74,6 +80,11 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-tomcat</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-core</artifactId>
+			<version>7.15.0</version>
 		</dependency>
 	</dependencies>
 

@@ -1,6 +1,6 @@
 package com.software.triviabot.repo;
 
-import com.software.triviabot.data.Answer;
+import com.software.triviabot.model.Answer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

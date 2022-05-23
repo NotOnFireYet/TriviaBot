@@ -1,11 +1,10 @@
 package com.software.triviabot.cache;
 
-import com.software.triviabot.data.Question;
-import com.software.triviabot.data.Topic;
+import com.software.triviabot.model.Question;
+import com.software.triviabot.model.Topic;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.validation.constraints.Null;
 import java.util.HashMap;
 import java.util.Map;
 

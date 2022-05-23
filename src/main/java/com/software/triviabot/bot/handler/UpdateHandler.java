@@ -6,7 +6,7 @@ import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.HintContainer;
-import com.software.triviabot.data.Question;
+import com.software.triviabot.model.Question;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.object.UserRepo;
@@ -36,12 +36,21 @@ public class UpdateHandler {
     private static final int nameLength = 30;
 
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
+        State state;
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
+            state = StateCache.getState(callbackQuery.getFrom().getId());
+            if (state == null || state == State.IGNORE) {
+                return null;
+            }
             return callbackQueryHandler.processCallbackQuery(callbackQuery);
         } else {
             Message message = update.getMessage();
             if (message != null && message.hasText()) {
+                state = StateCache.getState(message.getFrom().getId());
+                if ((state == null || state == State.IGNORE) && !message.getText().equals("/start")) { // todo: doesn't work!!
+                    return null;
+                }
                 return handleInputMessage(message);
             }
         }
@@ -111,7 +120,7 @@ public class UpdateHandler {
                         log.error("Unknown hint value: {}", hint.name());
                 }
             } catch (IllegalArgumentException e) {
-                log.error(e.getMessage());
+                log.info(e.getMessage());
                 eventHandler.handleNoMoreHints(chatId, userId);
             }
             return null;

@@ -1,6 +1,6 @@
 package com.software.triviabot.repo.object;
 
-import com.software.triviabot.data.QuestionStat;
+import com.software.triviabot.model.QuestionStat;
 import com.software.triviabot.repo.IQuestionStatsRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

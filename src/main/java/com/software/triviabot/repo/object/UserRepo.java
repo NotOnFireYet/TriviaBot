@@ -1,7 +1,7 @@
 package com.software.triviabot.repo.object;
 
-import com.software.triviabot.data.Score;
-import com.software.triviabot.data.User;
+import com.software.triviabot.model.Score;
+import com.software.triviabot.model.User;
 import com.software.triviabot.repo.IUserRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +29,8 @@ public class UserRepo {
     }
 
     public void saveScoreToUser(long userId, Score score){
-        log.info("Saving score {} to user {}", score.getAnsweredQuestions(), userId);
         User user = userRepo.getById(userId);
+        log.info("Saving score {} to user {}", score.getAnsweredQuestions(), user.getUsername());
         List<Score> newScores = user.getScores();
         newScores.add(score);
         user.setScores(newScores);
