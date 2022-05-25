@@ -13,6 +13,7 @@ import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
 import com.software.triviabot.repo.object.ScoreRepo;
+import com.software.triviabot.repo.object.UserCacheRepo;
 import com.software.triviabot.repo.object.UserRepo;
 import com.software.triviabot.service.MenuService;
 import com.software.triviabot.service.MessageService;
@@ -42,6 +43,7 @@ public class EventHandler {
 
     private final QuestionStatsRepo statRepo;
     private final ScoreRepo scoreRepo;
+    private final UserCacheRepo cacheRepo;
 
     private final ReplySender sender;
 
@@ -147,7 +149,7 @@ public class EventHandler {
         if (StateCache.getState(userId) == State.FIRSTQUESTION) { // if first question to be sent, send as separate message
             SendMessage message = msgService.buildMessage(chatId, text);
             message.setReplyMarkup(keyboard);
-            ActiveMessageCache.setRefreshMessage(userId, sender.send(message)); // set the message to be refreshed during quiz
+            ActiveMessageCache.setRefreshMessageId(userId, sender.send(message).getMessageId()); // set the message to be refreshed during quiz
         } else {
             msgService.editMessageText(chatId, userId, text);
             msgService.editInlineMarkup(chatId, userId, keyboard);
@@ -280,11 +282,15 @@ public class EventHandler {
     }
 
     public void deleteUserData(long userId) {
+        // deleting cache from db
+        cacheRepo.deleteCache(cacheRepo.findByUserId(userId));
+        userRepo.deleteUser(userRepo.findUserById(userId)); // deletes user + all children (stats and scores) from db
+
+        // deleting cache from runtime. todo: synchronize this with deleting cache from db
         ActiveMessageCache.clearCache(userId);
         QuestionCache.clearCache(userId);
         HintCache.clearCache(userId);
         StateCache.clearCache(userId);
-        userRepo.deleteUser(userRepo.findUserById(userId)); // deletes user + all children (stats and scores) from db
     }
 
     public SendMessage getGoodbyeMessage(long chatId) {

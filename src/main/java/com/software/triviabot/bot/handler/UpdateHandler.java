@@ -6,9 +6,11 @@ import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.HintContainer;
-import com.software.triviabot.model.Question;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
+import com.software.triviabot.model.Question;
+import com.software.triviabot.model.UserCache;
+import com.software.triviabot.repo.object.UserCacheRepo;
 import com.software.triviabot.repo.object.UserRepo;
 import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ public class UpdateHandler {
     private final ReplySender sender;
     private final MessageService msgService;
     private final UserRepo userRepo;
+    private final UserCacheRepo cacheRepo;
 
     private static final int nameLimit = 30;
 
@@ -131,11 +134,24 @@ public class UpdateHandler {
     }
 
     private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message) {
+        UserCache cache;
         if (userRepo.exists(userId)){
+            /*cache = cacheRepo.findByUserId(userId);
+            cacheRepo.saveCache(cache);
+
+            StateCache.setState(userId, State.valueOf(cache.getState()));
+            ActiveMessageCache.setRefreshMessageId(userId, cache.getRefreshMessageId());
+            ActiveMessageCache.setDeleteMessageId(userId, cache.getDeleteMessageId());*/
+            //todo: do the rest of the cache. stopped at a test run.
+
             StateCache.setState(userId, State.SCORE);
             return eventHandler.getWelcomeBackMessage(chatId, userId);
         } else {
             userRepo.saveNewUser(userId, message.getFrom().getUserName());
+            cache = new UserCache();
+            cache.setUser(userRepo.findUserById(userId));
+            cacheRepo.saveCache(cache);
+
             StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
             return eventHandler.getIntroMessage(chatId);
         }
@@ -171,7 +187,7 @@ public class UpdateHandler {
             case "Удалить мои данные":
                 StateCache.setState(userId, State.DELETEALL);
                 Message response = sender.send(eventHandler.getDeleteDataMessage(chatId));
-                ActiveMessageCache.setDeleteMessage(userId, response);
+                ActiveMessageCache.setDeleteMessageId(userId, response.getMessageId());
                 return null;
 
             default:
@@ -182,7 +198,7 @@ public class UpdateHandler {
     private void sendTopicOptions(long chatId, long userId) throws TelegramApiException {
         try {
             Message response = sender.send(eventHandler.getChooseTopicMessage(chatId, userId));
-            ActiveMessageCache.setDeleteMessage(userId, response);
+            ActiveMessageCache.setDeleteMessageId(userId, response.getMessageId());
         } catch (NullPointerException | TelegramApiException e) {
             sender.send(eventHandler.getNoTopicsMessage(chatId));
             StateCache.setState(userId, State.PREGAME);
