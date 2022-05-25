@@ -33,7 +33,7 @@ public class UpdateHandler {
     private final MessageService msgService;
     private final UserRepo userRepo;
 
-    private static final int nameLength = 30;
+    private static final int nameLimit = 30;
 
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         State state;
@@ -70,7 +70,7 @@ public class UpdateHandler {
         } else {
             switch (state) {
                 case START:         // ignore all user messages, including commands, before 1st game
-                    return null;    // except for name entering
+                    return null;
 
                 case ENTERNAME:
                     return handleEnteredName(chatId, userId, message);
@@ -130,25 +130,23 @@ public class UpdateHandler {
         }
     }
 
-    private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message) throws TelegramApiException {
-        StateCache.setState(userId, State.START);
-        if (!userRepo.exists(userId)){
+    private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message) {
+        if (userRepo.exists(userId)){
+            StateCache.setState(userId, State.SCORE);
+            return eventHandler.getWelcomeBackMessage(chatId, userId);
+        } else {
             userRepo.saveNewUser(userId, message.getFrom().getUserName());
             StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
             return eventHandler.getIntroMessage(chatId);
         }
-
-        sender.send(eventHandler.getWelcomeBackMessage(chatId, userId));
-        sendTopicOptions(chatId, userId);
-        return null;
     }
 
     private BotApiMethod<?> handleEnteredName(long chatId, long userId, Message message) throws TelegramApiException {
         StateCache.setState(userId, State.START);
         String name = message.getText();
-        if (name.length() > nameLength){
+        if (name.length() > nameLimit){
             StateCache.setState(userId, State.ENTERNAME);
-            return eventHandler.getNameTooLongMessage(chatId, nameLength);
+            return eventHandler.getNameTooLongMessage(chatId, nameLimit);
         }
         sender.send(eventHandler.processEnteredName(userId, chatId, message.getText()));
         sender.send(eventHandler.getRulesMessage(chatId));

@@ -29,7 +29,7 @@ public class CallbackQueryHandler {
 
     private final EventHandler eventHandler;
     private final ReplySender sender;
-    private final MessageService msgService;
+    private final MessageService msgService; // todo: left off on wiping heroku db to do init migration
 
     public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) throws TelegramApiException {
         long chatId = buttonQuery.getMessage().getChatId();

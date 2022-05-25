@@ -59,7 +59,9 @@ public class EventHandler {
 
     public SendMessage getWelcomeBackMessage(long chatId, long userId) {
         User user = userRepo.findUserById(userId);
-        return msgService.buildMessage(chatId, "С возвращением, " + user.getName() + "!");
+        SendMessage message = msgService.buildMessage(chatId, "С возвращением, " + user.getName() + "!");
+        message.setReplyMarkup(menuService.getMainMenu());
+        return message;
     }
 
     public SendMessage getChooseTopicMessage(long chatId, long userId) throws NullPointerException, TelegramApiException {
@@ -282,9 +284,7 @@ public class EventHandler {
         QuestionCache.clearCache(userId);
         HintCache.clearCache(userId);
         StateCache.clearCache(userId);
-        scoreRepo.deleteUserScores(userId);
-        statRepo.deleteAllUserStats(userId);
-        userRepo.deleteUser(userRepo.findUserById(userId));
+        userRepo.deleteUser(userRepo.findUserById(userId)); // deletes user + all children (stats and scores) from db
     }
 
     public SendMessage getGoodbyeMessage(long chatId) {

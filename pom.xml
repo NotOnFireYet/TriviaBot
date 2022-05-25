@@ -26,6 +26,7 @@
 		<flyway.user>tvlfrlvhztuxdj</flyway.user>
 		<flyway.password>f36014130bca2fef367ef711518a027711c0fe1f233b8d1fd550a03deb7ec0a0</flyway.password>
 		<flyway.schemas>public</flyway.schemas>
+		<flyway.baselineOnMigrate></flyway.baselineOnMigrate>
 	</properties>
 	<dependencies>
 		<!-- Spring -->
