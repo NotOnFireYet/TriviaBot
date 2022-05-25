@@ -29,7 +29,7 @@ public class CallbackQueryHandler {
 
     private final EventHandler eventHandler;
     private final ReplySender sender;
-    private final MessageService msgService; // todo: left off on wiping heroku db to do init migration
+    private final MessageService msgService;
 
     public BotApiMethod<?> processCallbackQuery(CallbackQuery buttonQuery) throws TelegramApiException {
         long chatId = buttonQuery.getMessage().getChatId();
@@ -48,7 +48,7 @@ public class CallbackQueryHandler {
                 eventHandler.handleNoQuestions(chatId);
                 StateCache.setState(userId, State.START);
                 Message response = sender.send(eventHandler.getChooseTopicMessage(chatId, userId));
-                ActiveMessageCache.setDeleteMessage(userId, response);
+                ActiveMessageCache.setDeleteMessageId(userId, response.getMessageId());
                 return null;
             }
 
@@ -59,8 +59,8 @@ public class CallbackQueryHandler {
             return null;
         }
 
-        Question question = QuestionCache.getCurrentQuestion(userId);
         if (data.endsWith("AnswerCallback")) { // if user picked an answer
+            Question question = QuestionCache.getCurrentQuestion(userId);
             StateCache.setState(userId, State.GOTANSWER);
             String answerIdString = data.replace("AnswerCallback", "");
             int answerId = Integer.parseInt(answerIdString);
@@ -87,6 +87,7 @@ public class CallbackQueryHandler {
 
             case "ReplacementHintCallback":
                 StateCache.setState(userId, State.GAMEPROCESS);
+                Question question = QuestionCache.getCurrentQuestion(userId);
                 eventHandler.processFiftyFiftyRequest(chatId, userId, question);
                 break;
 
