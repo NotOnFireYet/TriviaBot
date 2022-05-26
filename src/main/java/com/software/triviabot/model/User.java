@@ -26,4 +26,8 @@ public class User {
     @OneToMany(mappedBy="user", cascade = CascadeType.ALL,
         fetch = FetchType.LAZY)
     private List<Score> scores;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "cache_id", referencedColumnName = "cache_id")
+    private UserCache cache;
 }

@@ -20,7 +20,7 @@ public class MessageService {
     private final ReplySender sender;
 
     public void deleteCachedMessage(long chatId, long userId) throws TelegramApiException {
-        int messageId = ActiveMessageCache.getDeleteMessage(userId).getMessageId();
+        int messageId = ActiveMessageCache.getDeleteMessageId(userId);
         deleteUserMessage(chatId, messageId);
     }
 

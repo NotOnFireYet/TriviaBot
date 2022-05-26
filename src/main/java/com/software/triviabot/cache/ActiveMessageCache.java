@@ -1,11 +1,6 @@
 package com.software.triviabot.cache;
 
-import com.software.triviabot.model.UserCache;
-import com.software.triviabot.repo.object.UserCacheRepo;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -13,7 +8,6 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@AllArgsConstructor
 public class ActiveMessageCache {
     // message to be edited during quiz.
     // whole quiz consists of refreshing this message
@@ -21,14 +15,9 @@ public class ActiveMessageCache {
     // message to be deleted
     private static Map<Long, Integer> deleteMessageMap = new HashMap<>();
 
-    @Autowired
-    private static UserCacheRepo cacheRepo; // todo: stopped on this throwing a nullpointer. there may be a way to have a custom shutdown hook.
+    public ActiveMessageCache(){}
 
     public static void setRefreshMessageId(long userId, int messageId){
-        /*UserCache cache = cacheRepo.findByUserId(userId);
-        cache.setRefreshMessageId(messageId);
-        cacheRepo.saveCache(cache);*/
-
         refreshMessageMap.put(userId, messageId);
     }
 
@@ -41,10 +30,6 @@ public class ActiveMessageCache {
     }
 
     public static void setDeleteMessageId(long userId, int messageId) {
-        /*UserCache cache = cacheRepo.findByUserId(userId);
-        cache.setDeleteMessageId(messageId);
-        cacheRepo.saveCache(cache);*/
-
         deleteMessageMap.put(userId, messageId);
     }
 

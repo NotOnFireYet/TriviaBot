@@ -23,6 +23,8 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.annotation.PreDestroy;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
@@ -37,6 +39,11 @@ public class UpdateHandler {
     private final UserCacheRepo cacheRepo;
 
     private static final int nameLimit = 30;
+
+    @PreDestroy
+    public void destroy(){
+        log.info("we're shutting down aaaaa!");
+    }
 
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
         State state;
@@ -134,24 +141,11 @@ public class UpdateHandler {
     }
 
     private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message) {
-        UserCache cache;
         if (userRepo.exists(userId)){
-            /*cache = cacheRepo.findByUserId(userId);
-            cacheRepo.saveCache(cache);
-
-            StateCache.setState(userId, State.valueOf(cache.getState()));
-            ActiveMessageCache.setRefreshMessageId(userId, cache.getRefreshMessageId());
-            ActiveMessageCache.setDeleteMessageId(userId, cache.getDeleteMessageId());*/
-            //todo: do the rest of the cache. stopped at a test run.
-
             StateCache.setState(userId, State.SCORE);
             return eventHandler.getWelcomeBackMessage(chatId, userId);
         } else {
             userRepo.saveNewUser(userId, message.getFrom().getUserName());
-            cache = new UserCache();
-            cache.setUser(userRepo.findUserById(userId));
-            cacheRepo.saveCache(cache);
-
             StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
             return eventHandler.getIntroMessage(chatId);
         }

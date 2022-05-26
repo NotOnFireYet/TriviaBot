@@ -283,8 +283,9 @@ public class EventHandler {
 
     public void deleteUserData(long userId) {
         // deleting cache from db
-        cacheRepo.deleteCache(cacheRepo.findByUserId(userId));
+        /*cacheRepo.deleteCache(cacheRepo.findByUserId(userId));
         userRepo.deleteUser(userRepo.findUserById(userId)); // deletes user + all children (stats and scores) from db
+         */
 
         // deleting cache from runtime. todo: synchronize this with deleting cache from db
         ActiveMessageCache.clearCache(userId);
