@@ -6,24 +6,25 @@ import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.HintContainer;
+import com.software.triviabot.container.PriceContainer;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.model.Question;
 import com.software.triviabot.model.UserCache;
 import com.software.triviabot.repo.object.UserCacheRepo;
 import com.software.triviabot.repo.object.UserRepo;
+import com.software.triviabot.service.MenuService;
 import com.software.triviabot.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
-import javax.annotation.PreDestroy;
 
 @Slf4j
 @Component
@@ -35,35 +36,20 @@ public class UpdateHandler {
 
     private final ReplySender sender;
     private final MessageService msgService;
+    private final MenuService menuService;
     private final UserRepo userRepo;
     private final UserCacheRepo cacheRepo;
 
     private static final int nameLimit = 30;
 
-    @PreDestroy
-    public void destroy(){
-        log.info("we're shutting down aaaaa!");
-    }
-
     public BotApiMethod<?> handleUpdate(Update update) throws TelegramApiException {
-        State state;
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            state = StateCache.getState(callbackQuery.getFrom().getId());
-            if (state == null || state == State.PREGAME) {
-                return null;
-            }
             return callbackQueryHandler.processCallbackQuery(callbackQuery);
         } else {
             Message message = update.getMessage();
-            if (message != null && message.hasText()) {
-                state = StateCache.getState(message.getFrom().getId());
-                if ((state == null || state == State.PREGAME) && ! (message.getText().equals("/start") ||
-                    message.getText().equals("Запустить"))) { // todo: doesn't work!!
-                    return null;
-                }
+            if (message != null && message.hasText())
                 return handleInputMessage(message);
-            }
         }
         return null;
     }
@@ -71,17 +57,23 @@ public class UpdateHandler {
     private BotApiMethod<?> handleInputMessage(Message message) throws TelegramApiException, IllegalArgumentException {
         long userId = message.getFrom().getId();
         long chatId = message.getChatId();
+        if (!ActiveMessageCache.getChatIdMap().containsKey(userId))
+            ActiveMessageCache.setChadId(userId, chatId);
+
         String input = message.getText();
         State state = StateCache.getState(userId);
 
         if (state == null) {
-            if(input.equals("/start") || input.equals("Запустить"))
+            if(input.equals("/start"))
                 return handleStartCommand(chatId, userId, message);
+            if (input.equals("Разбудить")) {
+                if (userRepo.exists(userId))
+                    return handleRebootRequest(chatId, userId);
+                else
+                    return handleStartCommand(chatId, userId, message);
+            }
         } else {
             switch (state) {
-                case START:         // ignore all user messages, including commands, before 1st game
-                    return null;
-
                 case ENTERNAME:
                     return handleEnteredName(chatId, userId, message);
 
@@ -89,10 +81,11 @@ public class UpdateHandler {
                 case GAMEPROCESS:
                     return handleGameProcessUpdate(chatId, userId, message);
 
-                case GOTANSWER:
-                case GIVEHINT:
-                case DELETEALL: // delete all user messages, including commands
-                    msgService.deleteUserMessage(chatId, message.getMessageId());
+                // delete all user messages, including commands, for the states below
+                case START:
+                case RIGHTANSWER:
+                case DELETEDATA:
+                    msgService.deleteMessage(chatId, message.getMessageId());
                     return null;
 
                 case SCORE: // only react to main menu commands when main menu is displayed
@@ -105,10 +98,34 @@ public class UpdateHandler {
         return null;
     }
 
+    private BotApiMethod<?> handleScoreMenuUpdate(long chatId, long userId, Message message) throws TelegramApiException {
+        String input = message.getText();
+        switch (input) {
+            case "Начать викторину":
+                StateCache.setState(userId, State.FIRSTQUESTION);
+                sendTopicOptions(chatId, userId);
+                return null;
+
+            case "Напомнить правила":
+                return eventHandler.getRulesMessage(chatId);
+
+            case "Моя статистика":
+                return eventHandler.getStatsMessage(chatId, userId);
+
+            case "Удалить мои данные":
+                StateCache.setState(userId, State.DELETEDATA);
+                Message response = sender.send(eventHandler.getDeleteDataMessage(chatId));
+                ActiveMessageCache.setDeleteMessageId(userId, response.getMessageId());
+                return null;
+
+            default:
+                return nonCommandHandler.handle(message);
+        }
+    }
+
     private BotApiMethod<?> handleGameProcessUpdate(long chatId, long userId, Message message) throws TelegramApiException {
         if (HintContainer.getAllHintTexts().contains(message.getText())) {
-            StateCache.setState(userId, State.GIVEHINT);
-            msgService.deleteUserMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
+            msgService.deleteMessage(chatId, message.getMessageId()); // delete hint request message for cleanliness
             Hint hint = HintContainer.getHintByText(message.getText());
             Question question = QuestionCache.getCurrentQuestion(userId);
             try {
@@ -141,14 +158,9 @@ public class UpdateHandler {
     }
 
     private BotApiMethod<?> handleStartCommand(long chatId, long userId, Message message) {
-        if (userRepo.exists(userId)){
-            StateCache.setState(userId, State.SCORE);
-            return eventHandler.getWelcomeBackMessage(chatId, userId);
-        } else {
-            userRepo.saveNewUser(userId, message.getFrom().getUserName());
-            StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
-            return eventHandler.getIntroMessage(chatId);
-        }
+        userRepo.saveNewUser(userId, message.getFrom().getUserName());
+        StateCache.setState(userId, State.ENTERNAME); // to record next user message as name input
+        return eventHandler.getIntroMessage(chatId);
     }
 
     private BotApiMethod<?> handleEnteredName(long chatId, long userId, Message message) throws TelegramApiException {
@@ -164,28 +176,49 @@ public class UpdateHandler {
         return null;
     }
 
-    private BotApiMethod<?> handleScoreMenuUpdate(long chatId, long userId, Message message) throws TelegramApiException {
-        String input = message.getText();
-        switch (input) {
-            case "Начать викторину":
-                StateCache.setState(userId, State.FIRSTQUESTION);
+    private BotApiMethod<?> handleRebootRequest(long chatId, long userId) throws TelegramApiException {
+        UserCache cache = cacheRepo.existsByUserId(userId) ? cacheRepo.findByUserId(userId) : new UserCache();
+        State state = cacheRepo.existsByUserId(userId) ? State.valueOf(cache.getState()) : State.SCORE;
+        StateCache.setState(userId, state);
+        Message response;
+        switch (state) {
+            case START:
                 sendTopicOptions(chatId, userId);
                 return null;
 
-            case "Напомнить правила":
-                return eventHandler.getRulesMessage(chatId);
+            case GAMEPROCESS:
+            case FIRSTQUESTION:
+                HintCache.extractFromCache(cache);
+                QuestionCache.extractFromCache(userId, cache.getQuestion());
+                QuestionCache.decreaseQuestionNum(userId); // bc question number auto-increases in updateQuestion()
+                StateCache.setState(userId, State.FIRSTQUESTION); // to make it send as separate message
+                sender.send(eventHandler.getWelcomeBackMessage(chatId, userId, menuService.getHintMenu()));
+                eventHandler.updateQuestion(chatId, userId);
+                return null;
 
-            case "Моя статистика":
-                return eventHandler.getStatsMessage(chatId, userId);
+            case RIGHTANSWER:
+                HintCache.extractFromCache(cache);
+                QuestionCache.extractFromCache(userId, cache.getQuestion());
+                SendMessage message = eventHandler.getCorrectAnswerMessage(chatId, userId);
+                sender.send(eventHandler.getWelcomeBackMessage(chatId, userId, menuService.getHintMenu()));
+                response = sender.send(message);
+                ActiveMessageCache.setRefreshMessageId(userId, response.getMessageId());
+                return null;
 
-            case "Удалить мои данные":
-                StateCache.setState(userId, State.DELETEALL);
-                Message response = sender.send(eventHandler.getDeleteDataMessage(chatId));
+            case SCORE:
+                return eventHandler.getWelcomeBackMessage(chatId, userId, menuService.getMainMenu());
+
+            case ENTERNAME:
+                return eventHandler.getIntroMessage(chatId);
+
+            case DELETEDATA:
+                sender.send(eventHandler.getWelcomeBackMessage(chatId, userId, menuService.getMainMenu()));
+                response = sender.send(eventHandler.getDeleteDataMessage(chatId));
                 ActiveMessageCache.setDeleteMessageId(userId, response.getMessageId());
                 return null;
 
             default:
-                return nonCommandHandler.handle(message);
+                throw new IllegalArgumentException("Unknown state:" + state);
         }
     }
 

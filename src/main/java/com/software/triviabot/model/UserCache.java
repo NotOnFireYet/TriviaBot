@@ -21,12 +21,9 @@ public class UserCache {
     private int cacheId;
 
     @Unique
-    @OneToOne(mappedBy = "cache")
-    private User user;
-
     @OneToOne
-    @JoinColumn(name="topic_id")
-    private Topic topic;
+    @JoinColumn(name="user_id")
+    private User user;
 
     @OneToOne
     @JoinColumn(name="question_id")
@@ -39,8 +36,4 @@ public class UserCache {
     private int callFriendRemains;
 
     private String state;
-
-    private int deleteMessageId;
-
-    private int refreshMessageId;
 }

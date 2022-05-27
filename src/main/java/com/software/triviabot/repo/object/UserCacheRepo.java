@@ -19,7 +19,6 @@ public class UserCacheRepo {
     private final EntityManager entityManager;
 
     public UserCache saveCache(UserCache cache) {
-        log.info("Saving cache for user {}", cache.getUser().getUsername());
         return cacheRepo.save(cache);
     }
 
@@ -28,11 +27,16 @@ public class UserCacheRepo {
         cacheRepo.delete(cache);
     }
 
-    public UserCache findByUserId(long userId) {
-        log.info("Getting cache for user {}", userId);
+    public boolean existsByUserId(long userId) {
         List<UserCache> list = entityManager.createQuery(
-                "SELECT c FROM UserCache c WHERE user_id=" + userId
-                    + " ORDER BY RAND()")
+                "SELECT c FROM UserCache c WHERE user_id=" + userId)
+            .getResultList();
+        return !list.isEmpty();
+    }
+
+    public UserCache findByUserId(long userId) {
+        List<UserCache> list = entityManager.createQuery(
+                "SELECT c FROM UserCache c WHERE user_id=" + userId)
             .getResultList();
         return !list.isEmpty() ? list.get(0) : null;
     }

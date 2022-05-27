@@ -12,10 +12,26 @@ public class ActiveMessageCache {
     // message to be edited during quiz.
     // whole quiz consists of refreshing this message
     private static Map<Long, Integer> refreshMessageMap = new HashMap<>();
+
     // message to be deleted
     private static Map<Long, Integer> deleteMessageMap = new HashMap<>();
 
+    // map with all the chat id's corresponding to users
+    private static Map<Long, Long> chatIdMap = new HashMap<>();
+
     public ActiveMessageCache(){}
+
+    public static void setChadId(long userId, long chatId) {
+        chatIdMap.put(userId, chatId);
+    }
+
+    public static Map<Long, Long> getChatIdMap() {
+        return chatIdMap;
+    }
+
+    public static long getChatByUserId(long userId) {
+        return chatIdMap.get(userId);
+    }
 
     public static void setRefreshMessageId(long userId, int messageId){
         refreshMessageMap.put(userId, messageId);

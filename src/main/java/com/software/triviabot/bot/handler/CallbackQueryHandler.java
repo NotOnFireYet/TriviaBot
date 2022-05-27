@@ -61,7 +61,6 @@ public class CallbackQueryHandler {
 
         if (data.endsWith("AnswerCallback")) { // if user picked an answer
             Question question = QuestionCache.getCurrentQuestion(userId);
-            StateCache.setState(userId, State.GOTANSWER);
             String answerIdString = data.replace("AnswerCallback", "");
             int answerId = Integer.parseInt(answerIdString);
             Answer answer = answerRepo.findById(answerId);
@@ -98,7 +97,6 @@ public class CallbackQueryHandler {
                 break;
 
             case "DeleteDataCallback":
-                StateCache.setState(userId, State.PREGAME);
                 msgService.deleteCachedMessage(chatId, userId);
                 eventHandler.deleteUserData(userId);
                 return eventHandler.getGoodbyeMessage(chatId);

@@ -19,9 +19,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class MessageService {
     private final ReplySender sender;
 
-    public void deleteCachedMessage(long chatId, long userId) throws TelegramApiException {
+    public void deleteCachedMessage(long chatId, long userId) throws TelegramApiException, NullPointerException {
         int messageId = ActiveMessageCache.getDeleteMessageId(userId);
-        deleteUserMessage(chatId, messageId);
+        deleteMessage(chatId, messageId);
     }
 
     public void editMessageText(long chatId, long userId, String text) throws TelegramApiException {
@@ -32,11 +32,16 @@ public class MessageService {
         sender.edit(editText, null);
     }
 
-    public void deleteUserMessage(long chatId, int messageId) throws TelegramApiException {
+    public void deleteMessage(long chatId, int messageId) throws TelegramApiException {
+        log.info("Deleting message {}", messageId);
         DeleteMessage deleteMessage = new DeleteMessage();
         deleteMessage.setMessageId(messageId);
         deleteMessage.setChatId(String.valueOf(chatId));
-        sender.delete(deleteMessage);
+        try {
+            sender.delete(deleteMessage);
+        } catch (Exception e) {
+            throw new TelegramApiException("Error deleting message " + messageId);
+        }
     }
 
     public void editInlineMarkup(long chatId, long userId, InlineKeyboardMarkup keyboard) throws TelegramApiException {

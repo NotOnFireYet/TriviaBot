@@ -1,6 +1,7 @@
 package com.software.triviabot.cache;
 
 import com.software.triviabot.enums.Hint;
+import com.software.triviabot.model.UserCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -42,4 +43,12 @@ public class HintCache { // map of users with all of their remaining hint option
             hintCacheMap.remove(userId);
     }
 
+    public static void extractFromCache(UserCache cache) {
+        long userId = cache.getUser().getUserId();
+        Map<Hint, Integer> hintMap = new HashMap<>();
+        hintMap.put(Hint.FIFTY_FIFTY, cache.getFiftyFiftyRemains());
+        hintMap.put(Hint.AUDIENCE_HELP, cache.getAudienceHelpRemains());
+        hintMap.put(Hint.CALL_FRIEND, cache.getCallFriendRemains());
+        hintCacheMap.put(userId, hintMap);
+    }
 }

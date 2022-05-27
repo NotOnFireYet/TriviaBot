@@ -32,6 +32,7 @@ public class AppConfig {
 
         return bot;
     }
+
     @Bean
     public DataSource dataSource(){
         DriverManagerDataSource source = new DriverManagerDataSource();
@@ -44,7 +45,6 @@ public class AppConfig {
 
     @Bean
     public NamedParameterJdbcTemplate namedParameterJdbcTemplate(){
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(this.dataSource());
-        return namedParameterJdbcTemplate;
+        return new NamedParameterJdbcTemplate(this.dataSource());
     }
 }

@@ -28,10 +28,9 @@ public class NonCommandHandler {
         switch (state) {
             case FIRSTQUESTION:
             case GAMEPROCESS:
-            case GIVEHINT:
-            case GOTANSWER:
-            case DELETEALL:
-                msgService.deleteUserMessage(chatId, message.getMessageId()); // delete all non-command messages
+            case RIGHTANSWER:
+            case DELETEDATA:
+                msgService.deleteMessage(chatId, message.getMessageId()); // delete all non-command messages
                 return null;
 
             case PREGAME:

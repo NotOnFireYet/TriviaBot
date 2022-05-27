@@ -75,8 +75,12 @@ public class MenuService { // Constructs button layouts
         return inlineMarkup;
     }
 
-    public ReplyKeyboard getGoodbyeKeyboard() {
-        return getOneButtonReplyKeyboard("Запустить");
+    public ReplyKeyboard getLaunchBackKeyboard() {
+        return getOneButtonReplyKeyboard("/start");
+    }
+
+    public ReplyKeyboard getAwakenBotKeyboard() {
+        return getOneButtonReplyKeyboard("Разбудить");
     }
 
     public InlineKeyboardMarkup getTopicsMenu() throws NullPointerException {
@@ -158,7 +162,7 @@ public class MenuService { // Constructs button layouts
         return inlineKeyboardMarkup;
     }
 
-    public InlineKeyboardMarkup getNextQuestionKeyboard() {
+    public InlineKeyboardMarkup getNextQuestionButtonMarkup() {
         return getOneButtonInlineKeyboard("Следующий вопрос", "NextQuestionCallback");
     }
 

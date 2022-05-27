@@ -27,7 +27,9 @@ public class User {
         fetch = FetchType.LAZY)
     private List<Score> scores;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "cache_id", referencedColumnName = "cache_id")
-    private UserCache cache;
+    @Override
+    public String toString() {
+        return "{userId=" + this.getUserId() + ", username=" + this.getUsername() + ", name="
+            + this.getName() + "}";
+    }
 }

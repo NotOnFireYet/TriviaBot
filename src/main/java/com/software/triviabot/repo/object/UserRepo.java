@@ -56,6 +56,10 @@ public class UserRepo {
         return saveUser(user);
     }
 
+    public List<User> getAllUsers() {
+        return userRepo.findAll();
+    }
+
     public void deleteUser(User user){
         log.info("Deleting user {}", user.getUsername());
         userRepo.delete(user);

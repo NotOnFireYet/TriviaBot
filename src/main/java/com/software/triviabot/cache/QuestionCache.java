@@ -67,4 +67,10 @@ public class QuestionCache {
         if (currentTopicMap.containsKey(userId))
             currentTopicMap.remove(userId);
     }
+
+    public static void extractFromCache(long userId, Question question) {
+        currentTopicMap.put(userId, question.getTopic());
+        // -1 bc the question number will be incremented in updateQuestion()
+        currentQuestionMap.put(userId, question.getNumberInTopic());
+    }
 }

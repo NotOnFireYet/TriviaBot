@@ -8,9 +8,9 @@ import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.FailMessageContainer;
 import com.software.triviabot.container.HintContainer;
 import com.software.triviabot.container.PriceContainer;
-import com.software.triviabot.model.*;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
+import com.software.triviabot.model.*;
 import com.software.triviabot.repo.object.QuestionStatsRepo;
 import com.software.triviabot.repo.object.ScoreRepo;
 import com.software.triviabot.repo.object.UserCacheRepo;
@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -59,10 +60,10 @@ public class EventHandler {
         return msgService.buildMessage(chatId, "Имя не должно превышать " + nameLength + " символов!");
     }
 
-    public SendMessage getWelcomeBackMessage(long chatId, long userId) {
+    public SendMessage getWelcomeBackMessage(long chatId, long userId, ReplyKeyboardMarkup keyboard) {
         User user = userRepo.findUserById(userId);
         SendMessage message = msgService.buildMessage(chatId, "С возвращением, " + user.getName() + "!");
-        message.setReplyMarkup(menuService.getMainMenu());
+        message.setReplyMarkup(keyboard);
         return message;
     }
 
@@ -133,6 +134,14 @@ public class EventHandler {
             "\nПопробуйте позже (команда /start).");
     }
 
+    ////////////* HOUSEKEEPING EVENTS *////////////
+
+    public SendMessage getBotAsleepMessage(long chatId) {
+        SendMessage message = msgService.buildMessage(chatId, "Бот заснул \uD83D\uDCA4" + // zzz emoji
+            " Чтобы продолжить, нажмите \"Разбудить\".");
+        message.setReplyMarkup(menuService.getAwakenBotKeyboard());
+        return message;
+    }
 
     ////////////* QUIZ GAME EVENTS *////////////
 
@@ -158,6 +167,7 @@ public class EventHandler {
 
     public void processAnswer(long chatId, long userId, boolean isCorrect) throws TelegramApiException {
         if (isCorrect) {
+            StateCache.setState(userId, State.RIGHTANSWER);
             Question question = QuestionCache.getCurrentQuestion(userId);
             String text = question.getCorrectAnswerReaction();
             if (QuestionCache.isLastQuestion(userId)) {
@@ -167,10 +177,19 @@ public class EventHandler {
             }
             text += "\n" + PriceContainer.getPriceByQuestionNum(QuestionCache.getCurrentQuestionNum(userId)) + " рублей ваши!";
             msgService.editMessageText(chatId, userId, text);
-            msgService.editInlineMarkup(chatId, userId, menuService.getNextQuestionKeyboard());
+            msgService.editInlineMarkup(chatId, userId, menuService.getNextQuestionButtonMarkup());
         } else {
             processScoreEvent(chatId, userId, false);
         }
+    }
+
+    public SendMessage getCorrectAnswerMessage(long chatId, long userId) {
+        Question question = QuestionCache.getCurrentQuestion(userId);
+        String text = question.getCorrectAnswerReaction();
+        text += "\n" + PriceContainer.getPriceByQuestionNum(QuestionCache.getCurrentQuestionNum(userId)) + " рублей ваши!";
+        SendMessage message = msgService.buildMessage(chatId, text);
+        message.setReplyMarkup(menuService.getNextQuestionButtonMarkup());
+        return message;
     }
 
     ////////////* HINTS *////////////
@@ -282,12 +301,7 @@ public class EventHandler {
     }
 
     public void deleteUserData(long userId) {
-        // deleting cache from db
-        /*cacheRepo.deleteCache(cacheRepo.findByUserId(userId));
         userRepo.deleteUser(userRepo.findUserById(userId)); // deletes user + all children (stats and scores) from db
-         */
-
-        // deleting cache from runtime. todo: synchronize this with deleting cache from db
         ActiveMessageCache.clearCache(userId);
         QuestionCache.clearCache(userId);
         HintCache.clearCache(userId);
@@ -296,9 +310,9 @@ public class EventHandler {
 
     public SendMessage getGoodbyeMessage(long chatId) {
         String text = "Данные успешно стерты. До скорых встреч, незнакомец! \uD83D\uDC4B" + // waving hand emoji
-            "\nЕсли захотите начать заново, просто нажмите \"Запустить\".";
+            "\nЕсли захотите начать заново, просто нажмите кнопку /start.";
         SendMessage message = msgService.buildMessage(chatId, text);
-        message.setReplyMarkup(menuService.getGoodbyeKeyboard());
+        message.setReplyMarkup(menuService.getLaunchBackKeyboard());
         return message;
     }
 
