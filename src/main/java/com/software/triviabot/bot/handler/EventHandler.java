@@ -107,7 +107,7 @@ public class EventHandler {
     }
 
     public SendMessage getIntroMessage(long chatId) {
-        String text = "Добрый день, дорогорй игрок! \n" +
+        String text = "Добрый день, дорогой игрок! \n" +
             "Здесь вам предстоит попробовать свои силы в игре:" +
             " \"Кто хочет стать миллионером\"! \n" +
             "Пожалуйста, представьтесь:";
