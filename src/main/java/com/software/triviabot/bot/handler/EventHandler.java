@@ -310,7 +310,7 @@ public class EventHandler {
 
     public SendMessage getGoodbyeMessage(long chatId) {
         String text = "Данные успешно стерты. До скорых встреч, незнакомец! \uD83D\uDC4B" + // waving hand emoji
-            "\nЕсли захотите начать заново, просто нажмите кнопку /start.";
+            "\nЕсли захотите начать заново, просто нажмите кнопку \"Запустить\".";
         SendMessage message = msgService.buildMessage(chatId, text);
         message.setReplyMarkup(menuService.getLaunchBackKeyboard());
         return message;

@@ -76,7 +76,7 @@ public class MenuService { // Constructs button layouts
     }
 
     public ReplyKeyboard getLaunchBackKeyboard() {
-        return getOneButtonReplyKeyboard("/start");
+        return getOneButtonReplyKeyboard("Запустить");
     }
 
     public ReplyKeyboard getAwakenBotKeyboard() {

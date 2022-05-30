@@ -6,7 +6,6 @@ import com.software.triviabot.cache.HintCache;
 import com.software.triviabot.cache.QuestionCache;
 import com.software.triviabot.cache.StateCache;
 import com.software.triviabot.container.HintContainer;
-import com.software.triviabot.container.PriceContainer;
 import com.software.triviabot.enums.Hint;
 import com.software.triviabot.enums.State;
 import com.software.triviabot.model.Question;
@@ -64,8 +63,10 @@ public class UpdateHandler {
         State state = StateCache.getState(userId);
 
         if (state == null) {
-            if(input.equals("/start"))
-                return handleStartCommand(chatId, userId, message);
+            if(input.equals("/start") || input.equals("Запустить") ) {
+                if (!userRepo.exists(userId))
+                    return handleStartCommand(chatId, userId, message);
+            }
             if (input.equals("Разбудить")) {
                 if (userRepo.exists(userId))
                     return handleRebootRequest(chatId, userId);
