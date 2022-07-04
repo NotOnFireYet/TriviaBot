@@ -17,7 +17,7 @@ public class TriviabotApplication {
 	@Bean
 	CommandLineRunner run(QuestionService questionService){ // populating db with topics & questions
 		return args -> {
-			questionService.generateTopicsAndQuestions();
+			questionService.generateQuizData();
 		};
 	}
 }

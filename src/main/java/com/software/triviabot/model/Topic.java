@@ -1,8 +1,6 @@
 package com.software.triviabot.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.List;
@@ -10,9 +8,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "topics")
-public class Topic {
+public class Topic { // entity for quiz game topics
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "topic_id")
@@ -31,6 +30,10 @@ public class Topic {
                 return q;
         }
         return null;
+    }
+
+    public void addQuestion(Question q){
+        questions.add(q);
     }
 
     @Override

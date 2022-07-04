@@ -212,6 +212,11 @@ public class UpdateHandler {
             case ENTERNAME:
                 return eventHandler.getIntroMessage(chatId);
 
+            case PREGAME:
+                if (userRepo.exists(userId))
+                    return eventHandler.getChooseTopicMessage(chatId, userId);
+                return eventHandler.getIntroMessage(chatId);
+
             case DELETEDATA:
                 sender.send(eventHandler.getWelcomeBackMessage(chatId, userId, menuService.getMainMenu()));
                 response = sender.send(eventHandler.getDeleteDataMessage(chatId));

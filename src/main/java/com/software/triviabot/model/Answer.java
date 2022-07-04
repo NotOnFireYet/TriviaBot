@@ -1,17 +1,16 @@
 package com.software.triviabot.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "answers")
-public class Answer {
+public class Answer { // entity for answers to quiz quiestions
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="answer_id")
@@ -31,8 +30,12 @@ public class Answer {
 
     @Override
     public String toString() {
-        return "{answerId=" + this.getAnswerId() + ", questionId=" + this.question.getQuestionId()
-            + ", text=" + this.text + ", isCorrect="  + this.isCorrect + "}";
+        String res = "{answerId=" + getAnswerId();
+        if (question != null) {
+            res += ", questionId=" + question.getQuestionId();
+        }
+        res += ", text=" + text + ", isCorrect="  + isCorrect + "}";
+        return res;
     }
 
     @Override

@@ -1,8 +1,6 @@
 package com.software.triviabot.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.checkerframework.common.aliasing.qual.Unique;
 
 import javax.persistence.*;
@@ -11,8 +9,11 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name="user_cache")
+// entity that saves all the game states to database
+// upon shutdown
 public class UserCache {
     @Id
     @NotNull

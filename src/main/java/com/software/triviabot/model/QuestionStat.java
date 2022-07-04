@@ -1,16 +1,17 @@
 package com.software.triviabot.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Data
+@Getter
+@Setter
 @Table(name = "question_stats")
+// entity for statistics to be used in
+// "call friend" and "audience help" hints
 public class QuestionStat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
