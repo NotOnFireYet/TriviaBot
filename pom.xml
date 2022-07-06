@@ -6,13 +6,13 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.6.6</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.software</groupId>
 	<artifactId>SoftwareMillionaireBot</artifactId>
 	<version>1.0</version>
 	<name>SoftwareMillionaireBot</name>
-	<description>Telegram bot for a tech trivia contest.</description>
+	<description>Telegram bot in Java 11 for a trivia contest.</description>
 	<properties>
 		<java.version>11</java.version>
 		<telegram.version>6.0.1</telegram.version>
@@ -23,8 +23,8 @@
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
 
-		<flyway.user>tvlfrlvhztuxdj</flyway.user>
-		<flyway.password>f36014130bca2fef367ef711518a027711c0fe1f233b8d1fd550a03deb7ec0a0</flyway.password>
+		<flyway.user>username</flyway.user>
+		<flyway.password>password</flyway.password>
 		<flyway.schemas>public</flyway.schemas>
 		<flyway.baselineOnMigrate>true</flyway.baselineOnMigrate>
 	</properties>
