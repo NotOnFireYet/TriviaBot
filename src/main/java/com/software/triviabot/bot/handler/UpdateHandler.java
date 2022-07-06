@@ -62,7 +62,7 @@ public class UpdateHandler {
         String input = message.getText();
         State state = StateCache.getState(userId);
 
-        if (state == null) {
+        if (state == null || state == State.PREGAME) {
             if(input.equals("/start") || input.equals("Запустить") ) {
                 if (!userRepo.exists(userId))
                     return handleStartCommand(chatId, userId, message);
@@ -234,6 +234,7 @@ public class UpdateHandler {
             ActiveMessageCache.setDeleteMessageId(userId, response.getMessageId());
         } catch (NullPointerException | TelegramApiException e) {
             sender.send(eventHandler.getNoTopicsMessage(chatId));
+            eventHandler.deleteUserData(userId);
             StateCache.setState(userId, State.PREGAME);
         }
     }

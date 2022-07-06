@@ -1,4 +1,4 @@
-package com.software.triviabot.model.wrapper;
+package com.software.triviabot.model.json;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Getter
 @Setter
-public class QuestionJsonWrapper {
+public class QuestionJson {
     private String questionText;
     private List<String> answers;
     private String rightAnswer;

@@ -44,7 +44,6 @@ public class EventHandler {
 
     private final QuestionStatsRepo statRepo;
     private final ScoreRepo scoreRepo;
-    private final UserCacheRepo cacheRepo;
 
     private final ReplySender sender;
 
@@ -130,8 +129,10 @@ public class EventHandler {
     }
 
     public SendMessage getNoTopicsMessage(long chatId) {
-        return msgService.buildMessage(chatId, "Темы временно отсутствуют. Приносим извинения :(" +
+        SendMessage message = msgService.buildMessage(chatId, "Темы временно отсутствуют. Приносим извинения :(" +
             "\nПопробуйте позже (команда /start).");
+        message.setReplyMarkup(menuService.getStartButton());
+        return message;
     }
 
     ////////////* HOUSEKEEPING EVENTS *////////////

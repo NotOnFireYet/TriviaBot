@@ -45,8 +45,12 @@ public class Topic { // entity for quiz game topics
             return false;
         }
         Topic topic = (Topic) o;
-        return getTitle() != null
-            ? getTitle().equals(topic.getTitle())
-            : topic.getTitle() == null;
+
+        if (!getQuestions().equals(topic.getQuestions()))
+            return false;
+
+        return getTitle() != null ?
+            getTitle().equals(topic.getTitle()) :
+            topic.getTitle() == null;
     }
 }

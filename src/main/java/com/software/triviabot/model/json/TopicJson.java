@@ -1,4 +1,4 @@
-package com.software.triviabot.model.wrapper;
+package com.software.triviabot.model.json;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import java.util.List;
 @Setter
 // Class to map topics from json file
 // during topic and question creation
-public class TopicJsonWrapper {
+public class TopicJson {
     private String topicName;
-    List<QuestionJsonWrapper> questions;
+    List<QuestionJson> questions;
 }

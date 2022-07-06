@@ -1,19 +1,20 @@
 package com.software.triviabot.service;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.software.triviabot.model.*;
-import com.software.triviabot.model.wrapper.QuestionJsonWrapper;
-import com.software.triviabot.model.wrapper.TopicJsonWrapper;
+import com.software.triviabot.model.json.QuestionJson;
+import com.software.triviabot.model.json.TopicJson;
 import com.software.triviabot.repo.object.QuestionRepo;
 import com.software.triviabot.repo.object.TopicRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ResourceUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 
 @Slf4j
@@ -21,28 +22,28 @@ import java.util.*;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class QuestionService {
     private final TopicRepo topicRepo;
-    private final QuestionRepo questionRepo;
-
     private String path = "json/topics.json";
 
     public void generateQuizData() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
-        URL url = QuestionService.class.getClassLoader().getResource(path);
-        TopicJsonWrapper[] topics;
+        TopicJson[] topics;
         try {
-            topics = mapper.readValue(new File(url.getFile()), TopicJsonWrapper[].class);
-            for (TopicJsonWrapper t : topics) {
+            File file = ResourceUtils.getFile("classpath:" + path);
+            topics = mapper.readValue(file, TopicJson[].class);
+        }  catch (NullPointerException e) {
+            log.error("Could not locate quiz data file. Proceeding with previous version");
+            return;
+        } catch (JsonParseException e) {
+            log.error("Failed to parse quiz data. Proceeding with previous version");
+            return;
+        }
+        try {
+            topicRepo.deleteAllTopics(); // delete and re-upload all quiz data on relaunch
+            for (TopicJson t : topics) {
                 Topic topic = new Topic();
                 topic.setTitle(t.getTopicName());
                 topic.setQuestions(new ArrayList<>());
-                for (QuestionJsonWrapper q : t.getQuestions()) {
-                    String text = q.getQuestionText();
-                    /*if (questionRepo.existsByText(text)){
-                        if (questionRepo.getByText(text).equals(q))
-                            continue;
-                        else
-                            // todo: edit questions if they don't look like the json file
-                    }*/
+                for (QuestionJson q : t.getQuestions()) {
                     topic.addQuestion(createQuestion(topic,
                         q.getQuestionText(),
                         q.getRightAnswerReaction(),
@@ -55,8 +56,6 @@ public class QuestionService {
                 }
                 topicRepo.saveTopic(topic);
             }
-        } catch (NullPointerException e) {
-            log.error("Could not locate quiz data file!");
         }
         catch (IllegalArgumentException e) {
             log.error(e.getMessage());

@@ -54,8 +54,8 @@ public class Answer { // entity for answers to quiz quiestions
         if (getIsCorrect() != answer.getIsCorrect()) {
             return false;
         }
-        return getText() != null
-            ? getText().equals(answer.getText())
-            : answer.getText() == null;
+        return getText() != null ?
+            getText().equals(answer.getText()) :
+            answer.getText() == null;
     }
 }

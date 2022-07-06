@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.software</groupId>
-	<artifactId>triviabot</artifactId>
+	<artifactId>SoftwareMillionaireBot</artifactId>
 	<version>1.0</version>
-	<name>triviabot</name>
+	<name>SoftwareMillionaireBot</name>
 	<description>Telegram bot for a tech trivia contest.</description>
 	<properties>
 		<java.version>11</java.version>
@@ -26,7 +26,7 @@
 		<flyway.user>tvlfrlvhztuxdj</flyway.user>
 		<flyway.password>f36014130bca2fef367ef711518a027711c0fe1f233b8d1fd550a03deb7ec0a0</flyway.password>
 		<flyway.schemas>public</flyway.schemas>
-		<flyway.baselineOnMigrate></flyway.baselineOnMigrate>
+		<flyway.baselineOnMigrate>true</flyway.baselineOnMigrate>
 	</properties>
 	<dependencies>
 		<!-- Spring -->
@@ -41,11 +41,6 @@
 		</dependency>
 
 		<!-- Developer tools -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<optional>true</optional>
-		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>

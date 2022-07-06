@@ -47,12 +47,18 @@ public class Question { // entity for quiz questions
         if (!getTopic().equals(question.getTopic()))
             return false;
 
-        if (!getCorrectAnswerReaction().equals(question.getCorrectAnswerReaction())) {
+        if (!getCorrectAnswerReaction().equals(question.getCorrectAnswerReaction()))
             return false;
-        }
-        return getText() != null
-            ? getText().equals(question.getText())
-            : question.getText() == null;
+
+        if (numberInTopic != question.getNumberInTopic())
+            return false;
+
+        if (!getAnswers().equals(question.getAnswers()))
+            return false;
+
+        return getText() != null ?
+            getText().equals(question.getText()) :
+            question.getText() == null;
     }
 
     @Override

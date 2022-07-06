@@ -54,6 +54,10 @@ public class MenuService { // Constructs button layouts
         return replyKeyboardMarkup;
     }
 
+    public ReplyKeyboardMarkup getStartButton() {
+        return getOneButtonReplyKeyboard("/start");
+    }
+
     public ReplyKeyboard getDeleteOkKeyboard() {
         InlineKeyboardMarkup inlineMarkup = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
